@@ -28,7 +28,8 @@ const Navbar: React.FC = () => {
             try {
                 await connect();
             } catch (error) {
-                console.error('Failed to connect wallet:', error);
+                console.error('Wallet connection failed:', error);
+                alert('Failed to connect wallet. Please make sure you have a Stacks wallet installed.');
             }
         }
     };

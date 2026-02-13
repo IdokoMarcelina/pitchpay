@@ -39,7 +39,13 @@ const Dashboard: React.FC = () => {
                                 <div className="relative z-10">
                                     <h4 className="font-bold text-sm mb-2 text-brand-accent">Boost Portfolio</h4>
                                     <p className="text-xs text-white/60 mb-4">Get 2x more visibility for your latest startups.</p>
-                                    <Button variant="primary" className="w-full py-2 text-xs">Upgrade</Button>
+                                    <Button 
+                                        variant="primary" 
+                                        className="w-full py-2 text-xs"
+                                        onClick={() => navigate('/explorer')}
+                                    >
+                                        Upgrade
+                                    </Button>
                                 </div>
                                 <div className="absolute -right-4 -bottom-4 opacity-10 group-hover:scale-110 transition-transform">
                                     <Rocket size={80} />
