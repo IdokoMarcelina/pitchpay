@@ -4,6 +4,7 @@ import { PitchController, createPitchValidation, verifyPitchValidation } from '.
 const router = Router();
 
 router.get('/pitches', PitchController.getPitches);
+router.get('/pitches/:id', PitchController.getPitchById);
 router.post('/pitches', createPitchValidation, PitchController.createPitch);
 router.post('/pitches/:id/verify', verifyPitchValidation, PitchController.verifyPitch);
 router.post('/pitches/:id/boost', PitchController.boostPitch);

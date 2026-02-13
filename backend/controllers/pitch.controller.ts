@@ -43,13 +43,45 @@ export class PitchController {
 
     static async getPitches(req: Request, res: Response) {
         try {
-            const pitches = await Pitch.find({ status: 'PAID' }).sort({
-                isBoosted: -1,
-                createdAt: -1,
+            const page = Math.max(1, parseInt(req.query.page as string) || 1);
+            const limit = Math.min(50, Math.max(1, parseInt(req.query.limit as string) || 10));
+            const skip = (page - 1) * limit;
+
+            const [pitches, total] = await Promise.all([
+                Pitch.find({ status: { $in: ['PAID', 'VERIFIED'] } })
+                    .sort({ isBoosted: -1, createdAt: -1 })
+                    .skip(skip)
+                    .limit(limit),
+                Pitch.countDocuments({ status: { $in: ['PAID', 'VERIFIED'] } })
+            ]);
+
+            res.json({
+                data: pitches,
+                pagination: {
+                    page,
+                    limit,
+                    total,
+                    pages: Math.ceil(total / limit),
+                },
             });
-            res.json(pitches);
         } catch (error) {
             console.error('Error in getPitches:', error);
+            res.status(500).json({ error: 'Internal server error' });
+        }
+    }
+
+    static async getPitchById(req: Request, res: Response) {
+        try {
+            const id = req.params.id as string;
+            const pitch = await Pitch.findById(id);
+
+            if (!pitch) {
+                return res.status(404).json({ error: 'Pitch not found' });
+            }
+
+            res.json(pitch);
+        } catch (error) {
+            console.error('Error in getPitchById:', error);
             res.status(500).json({ error: 'Internal server error' });
         }
     }

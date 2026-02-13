@@ -19,9 +19,49 @@ const STACKS_API_URL =
 
 export const getContractId = () => `${CONTRACT_ADDRESS}.${CONTRACT_NAME}`;
 
+const NONCE_EXPIRY = 5 * 60 * 1000;
+const nonceStore = new Map<string, { address: string; expires: number }>();
+
 export class StacksService {
     static generatePitchHash(content: string): string {
         return crypto.createHash('sha256').update(content).digest('hex');
+    }
+
+    static generateAuthNonce(address: string): string {
+        const nonce = crypto.randomBytes(32).toString('hex');
+        nonceStore.set(nonce, { address, expires: Date.now() + NONCE_EXPIRY });
+        setTimeout(() => nonceStore.delete(nonce), NONCE_EXPIRY);
+        return nonce;
+    }
+
+    static verifyAuthNonce(nonce: string, address: string): boolean {
+        const stored = nonceStore.get(nonce);
+        if (!stored || stored.expires < Date.now()) {
+            return false;
+        }
+        if (stored.address.toLowerCase() !== address.toLowerCase()) {
+            return false;
+        }
+        nonceStore.delete(nonce);
+        return true;
+    }
+
+    static async getContractOwner(): Promise<string | null> {
+        try {
+            const result = await fetchCallReadOnlyFunction({
+                contractAddress: CONTRACT_ADDRESS,
+                contractName: CONTRACT_NAME,
+                functionName: 'get-contract-owner',
+                functionArgs: [],
+                network,
+                senderAddress: CONTRACT_ADDRESS,
+            });
+            const parsed = cvToJSON(result);
+            return parsed.value ?? null;
+        } catch (error) {
+            console.error('Error fetching contract owner:', error);
+            return null;
+        }
     }
 
     static async getPitchOnChain(pitchIdHash: string) {

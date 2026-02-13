@@ -51,6 +51,10 @@
     (var-get boost-fee)
 )
 
+(define-read-only (get-contract-owner)
+    (var-get contract-owner)
+)
+
 ;; Public functions
 (define-public (pay-for-pitch (pitch-id (buff 32)))
     (let ((fee (var-get pitch-fee)))

@@ -3,14 +3,15 @@ import mongoose from 'mongoose';
 import cors from 'cors';
 import dotenv from 'dotenv';
 import rateLimit from 'express-rate-limit';
-import apiRoutes from './routes/pitch';
+import pitchRoutes from './routes/pitch';
+import authRoutes from './routes/auth';
 import { errorHandler } from './middleware/error.middleware';
 
 dotenv.config();
 
 const app = express();
 const PORT = process.env.PORT || 3000;
-const MONGODB_URI = process.env.MONGODB_URI || 'mongodb://localhost:27017/pitchpa';
+const MONGODB_URI = process.env.MONGODB_URI || 'mongodb://localhost:27017/pitchpay';
 
 const limiter = rateLimit({
     windowMs: 15 * 60 * 1000,
@@ -22,7 +23,8 @@ app.use(cors());
 app.use(express.json());
 app.use('/api', limiter);
 
-app.use('/api', apiRoutes);
+app.use('/api', pitchRoutes);
+app.use('/api/auth', authRoutes);
 
 app.get('/health', (req, res) => res.send('PitchPay API is running'));
 
