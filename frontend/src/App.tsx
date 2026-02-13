@@ -1,9 +1,11 @@
-import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
+import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import LandingPage from './pages/LandingPage';
 import Explorer from './pages/Explorer';
 import Dashboard from './pages/Dashboard';
 import CreatePitch from './pages/CreatePitch';
 import PitchDetail from './pages/PitchDetail';
+import Analytics from './pages/Analytics';
+import Boost from './pages/Boost';
 import { useAnalytics } from './hooks/useAnalytics';
 
 function AppContent() {
@@ -14,8 +16,11 @@ function AppContent() {
         <Route path="/" element={<LandingPage />} />
         <Route path="/explorer" element={<Explorer />} />
         <Route path="/dashboard" element={<Dashboard />} />
+        <Route path="/analytics" element={<Analytics />} />
+        <Route path="/boost" element={<Boost />} />
         <Route path="/create" element={<CreatePitch />} />
         <Route path="/pitch/:id" element={<PitchDetail />} />
+        <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>
     </div>
   );

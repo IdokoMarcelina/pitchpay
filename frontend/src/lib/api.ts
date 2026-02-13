@@ -65,6 +65,11 @@ async function fetchApi<T>(
 
   const response = await fetch(url, config);
 
+  if (response.status === 402) {
+    const data = await response.json();
+    return data as T;
+  }
+
   if (!response.ok) {
     const error = await response.json().catch(() => ({ error: 'Unknown error' }));
     throw new ApiError(error.error || 'Request failed', response.status);

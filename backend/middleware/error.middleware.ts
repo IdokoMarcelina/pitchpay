@@ -45,22 +45,31 @@ export const errorHandler = (
   }
 
   console.error('Unexpected error:', err);
+  
+  const isDev = process.env.NODE_ENV !== 'production';
+  const message = isDev ? err.message : 'Something went wrong. Please try again.';
+  
   return res.status(500).json({
-    error: 'Internal server error',
+    error: message,
     statusCode: 500,
   });
 };
 
 export const validateRequest = (schema: any) => {
   return (req: Request, res: Response, next: NextFunction) => {
-    const result = schema.safeParse(req.body);
+    const result = schema.safeParse(req.body, { issues: true });
     if (!result.success) {
-      const errors = result.error.errors.map(e => ({
+      const errors = result.error?.issues?.map((e: any) => ({
         field: e.path.join('.'),
         message: e.message,
-      }));
+      })) || [];
+      
+      const errorMessage = errors.length > 0 
+        ? errors.map(e => `${e.field}: ${e.message}`).join('; ')
+        : 'Invalid request data';
+      
       return res.status(400).json({
-        error: 'Validation failed',
+        error: errorMessage,
         details: errors,
       });
     }

@@ -57,7 +57,7 @@ export class X402Service {
 
         return res.status(402).json({
             status: 402,
-            message: 'Payment Required',
+            message: 'Payment Required: Send 5 STX to publish your pitch',
             payment_details: {
                 type: 'stacks',
                 amount: pitchFee,
@@ -153,7 +153,7 @@ export class X402Service {
         
         return {
             status: 402,
-            message: 'Boost Payment Required',
+            message: 'Boost Payment Required: Send 10 STX to boost your pitch',
             payment_details: {
                 type: 'stacks',
                 amount: boostFee,

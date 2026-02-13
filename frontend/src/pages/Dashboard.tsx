@@ -1,5 +1,5 @@
 import React from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { Link, useNavigate, useLocation } from 'react-router-dom';
 import Navbar from '../components/Navbar';
 import Button from '../components/Button';
 import { Plus, LayoutDashboard, Wallet, BarChart2, PlusCircle, Rocket, Loader2 } from 'lucide-react';
@@ -9,6 +9,7 @@ import { usePitches } from '../hooks/usePitches';
 
 const Dashboard: React.FC = () => {
     const navigate = useNavigate();
+    const location = useLocation();
     const { address } = useWallet();
     const { pitches, isLoading, error } = usePitches({ limit: 50 });
     
@@ -21,6 +22,8 @@ const Dashboard: React.FC = () => {
         return `${addr.slice(0, 6)}...${addr.slice(-4)}`;
     };
 
+    const isActive = (path: string) => location.pathname === path;
+
     return (
         <div className="min-h-screen">
             <Navbar />
@@ -29,11 +32,27 @@ const Dashboard: React.FC = () => {
                 <div className="flex flex-col lg:flex-row gap-8">
                     {/* Sidebar */}
                     <aside className="lg:w-64 space-y-2">
-                        <DashboardNavItem icon={<LayoutDashboard size={20} />} label="Overview" active />
-                        <Link to="/create">
-                            <DashboardNavItem icon={<PlusCircle size={20} />} label="New Pitch" />
+                        <Link to="/dashboard">
+                            <DashboardNavItem 
+                                icon={<LayoutDashboard size={20} />} 
+                                label="Overview" 
+                                active={isActive('/dashboard')} 
+                            />
                         </Link>
-                        <DashboardNavItem icon={<BarChart2 size={20} />} label="Analytics" />
+                        <Link to="/analytics">
+                            <DashboardNavItem 
+                                icon={<BarChart2 size={20} />} 
+                                label="Analytics" 
+                                active={isActive('/analytics')} 
+                            />
+                        </Link>
+                        <Link to="/create">
+                            <DashboardNavItem 
+                                icon={<PlusCircle size={20} />} 
+                                label="New Pitch" 
+                                active={isActive('/create')} 
+                            />
+                        </Link>
                         <div className="pt-8 px-4">
                             <div className="bg-gradient-to-br from-brand-accent/20 to-transparent p-6 rounded-2xl border border-brand-accent/30 relative overflow-hidden group">
                                 <div className="relative z-10">
@@ -42,7 +61,7 @@ const Dashboard: React.FC = () => {
                                     <Button 
                                         variant="primary" 
                                         className="w-full py-2 text-xs"
-                                        onClick={() => navigate('/explorer')}
+                                        onClick={() => navigate('/boost')}
                                     >
                                         Upgrade
                                     </Button>
