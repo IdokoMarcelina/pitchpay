@@ -6,20 +6,25 @@ import CreatePitch from './pages/CreatePitch';
 import PitchDetail from './pages/PitchDetail';
 import { useAnalytics } from './hooks/useAnalytics';
 
-function App() {
+function AppContent() {
   useAnalytics();
-  
+  return (
+    <div className="min-h-screen bg-brand-primary">
+      <Routes>
+        <Route path="/" element={<LandingPage />} />
+        <Route path="/explorer" element={<Explorer />} />
+        <Route path="/dashboard" element={<Dashboard />} />
+        <Route path="/create" element={<CreatePitch />} />
+        <Route path="/pitch/:id" element={<PitchDetail />} />
+      </Routes>
+    </div>
+  );
+}
+
+function App() {
   return (
     <Router>
-      <div className="min-h-screen bg-brand-primary">
-        <Routes>
-          <Route path="/" element={<LandingPage />} />
-          <Route path="/explorer" element={<Explorer />} />
-          <Route path="/dashboard" element={<Dashboard />} />
-          <Route path="/create" element={<CreatePitch />} />
-          <Route path="/pitch/:id" element={<PitchDetail />} />
-        </Routes>
-      </div>
+      <AppContent />
     </Router>
   );
 }
