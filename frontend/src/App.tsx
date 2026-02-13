@@ -4,8 +4,11 @@ import Explorer from './pages/Explorer';
 import Dashboard from './pages/Dashboard';
 import CreatePitch from './pages/CreatePitch';
 import PitchDetail from './pages/PitchDetail';
+import { useAnalytics } from './hooks/useAnalytics';
 
 function App() {
+  useAnalytics();
+  
   return (
     <Router>
       <div className="min-h-screen bg-brand-primary">
