@@ -45,6 +45,10 @@ export async function payForBoost(pitchIdHash: string): Promise<TransactionResul
   return makeContractCall('pay-for-boost', [`0x${pitchIdHash}`]);
 }
 
+export async function payForInvestment(pitchIdHash: string, amount: string): Promise<TransactionResult> {
+  return makeContractCall('invest-in-pitch', [`0x${pitchIdHash}`, amount]);
+}
+
 export function getContractId(): string {
   return `${CONTRACT_ADDRESS}.${CONTRACT_NAME}`;
 }

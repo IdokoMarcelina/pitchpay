@@ -127,6 +127,19 @@ export const api = {
       headers: { Authorization: `Bearer ${authHeader}` },
     }),
   
+  // Invest
+  investPitch: (id: string, amount?: number) => 
+    fetchApi<PaymentDetails>(`/pitches/${id}/invest`, {
+      method: 'POST',
+      body: JSON.stringify({ amount }),
+    }),
+  
+  verifyInvestment: (id: string, txid: string) => 
+    fetchApi<{ message: string }>(`/pitches/${id}/verify-investment`, {
+      method: 'POST',
+      body: JSON.stringify({ txid }),
+    }),
+  
   // Sync
   syncPitch: (id: string) => 
     fetchApi<{ message: string }>(`/pitches/${id}/sync`, {

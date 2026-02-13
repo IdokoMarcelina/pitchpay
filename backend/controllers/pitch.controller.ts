@@ -204,6 +204,54 @@ export class PitchController {
             res.status(500).json({ error: 'Internal server error' });
         }
     }
+
+    static async investPitch(req: Request, res: Response) {
+        try {
+            const id = req.params.id as string;
+            const { amount } = req.body;
+
+            const pitch = await Pitch.findById(id);
+
+            if (!pitch) {
+                return res.status(404).json({ error: 'Pitch not found' });
+            }
+
+            if (!pitch.pitchIdHash) {
+                return res.status(400).json({ error: 'Pitch not verified on chain' });
+            }
+
+            const amountMicroSTX = amount ? amount * 1000000 : null;
+            const paymentDetails = await X402Service.getInvestmentPaymentDetails(pitch.pitchIdHash, amountMicroSTX);
+            return res.status(402).json(paymentDetails);
+        } catch (error) {
+            console.error('Error in investPitch:', error);
+            res.status(500).json({ error: 'Internal server error' });
+        }
+    }
+
+    static async verifyInvestment(req: Request, res: Response) {
+        try {
+            const id = req.params.id as string;
+            const { txid } = req.body;
+
+            if (!txid) {
+                return res.status(400).json({ error: 'Missing TXID' });
+            }
+
+            const verified = await X402Service.verifyInvestmentPayment(id, txid);
+
+            if (verified) {
+                res.json({ message: 'Investment verified' });
+            } else {
+                res.status(400).json({
+                    error: 'Investment verification failed or pending',
+                });
+            }
+        } catch (error) {
+            console.error('Error in verifyInvestment:', error);
+            res.status(500).json({ error: 'Internal server error' });
+        }
+    }
 }
 
 export const createPitchValidation = validateRequest(createPitchSchema);

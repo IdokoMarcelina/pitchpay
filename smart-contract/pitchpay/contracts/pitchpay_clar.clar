@@ -6,8 +6,11 @@
 (define-constant ERR-NOT-AUTHORIZED (err u100))
 (define-constant ERR-ALREADY-BOOSTED (err u101))
 (define-constant ERR-PITCH-NOT-FOUND (err u102))
-(define-constant ERR-INVALID-PITCH-ID (err u103))  ;; new
-(define-constant ERR-INVALID-FEE (err u104))        ;; new
+(define-constant ERR-INVALID-PITCH-ID (err u103))
+(define-constant ERR-INVALID-FEE (err u104))
+(define-constant ERR-INVALID-amount (err u105))
+
+(define-constant MIN-INVESTMENT u100000)   ;; 0.1 STX minimum
 
 (define-constant MIN-FEE u1000000)       
 (define-constant MAX-FEE u1000000000)    
@@ -95,6 +98,27 @@
         (print {
             event: "pitch-boosted",
             pitch-id: pitch-id,
+        })
+        (ok true)
+    )
+)
+
+;; Invest in a pitch - pay directly to founder
+(define-public (invest-in-pitch (pitch-id (buff 32)) (amount uint))
+    (let (
+        (pitch (unwrap! (get-pitch pitch-id) ERR-PITCH-NOT-FOUND))
+        (founder (get founder pitch))
+    )
+        (asserts! (>= amount MIN-INVESTMENT) ERR-INVALID-amount)
+        
+        (try! (stx-transfer? amount tx-sender founder))
+        
+        (print {
+            event: "pitch-invested",
+            pitch-id: pitch-id,
+            investor: tx-sender,
+            founder: founder,
+            amount: amount,
         })
         (ok true)
     )

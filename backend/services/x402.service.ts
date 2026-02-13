@@ -165,4 +165,33 @@ export class X402Service {
             },
         };
     }
+
+    static async getInvestmentPaymentDetails(pitchIdHash: string, amountMicroSTX: number | null) {
+        const { pitchFee } = await getCachedFees();
+        const amount = amountMicroSTX || pitchFee;
+        
+        return {
+            status: 402,
+            message: `Investment Required: Send ${(amount / 1000000).toFixed(2)} STX to support this startup`,
+            payment_details: {
+                type: 'stacks',
+                amount: amount,
+                contract_call: {
+                    contract: getContractId(),
+                    function: 'invest-in-pitch',
+                    args: [`0x${pitchIdHash}`, amount.toString()],
+                },
+            },
+        };
+    }
+
+    static async verifyInvestmentPayment(pitchId: string, txid: string) {
+        const tx = (await StacksService.verifyTransaction(txid)) as StacksTx | null;
+
+        if (tx && typeof tx.tx_status === 'string' && tx.tx_status === 'success') {
+            return true;
+        }
+
+        return false;
+    }
 }
