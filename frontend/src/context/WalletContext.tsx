@@ -1,5 +1,5 @@
-import { createContext, useContext, useState, useCallback, type ReactNode } from 'react';
-import { StacksMockWallet } from '../lib/wallet';
+import { createContext, useContext, useState, useEffect, useCallback, type ReactNode } from 'react';
+import { wallet } from '../lib/wallet';
 
 interface WalletState {
   address: string | null;
@@ -9,7 +9,7 @@ interface WalletState {
 
 interface WalletContextType extends WalletState {
   connect: () => Promise<void>;
-  disconnect: () => void;
+  disconnect: () => Promise<void>;
   signMessage: (message: string) => Promise<string>;
 }
 
@@ -19,16 +19,28 @@ export function WalletProvider({ children }: { children: ReactNode }) {
   const [state, setState] = useState<WalletState>({
     address: null,
     isConnected: false,
-    isLoading: false,
+    isLoading: true,
   });
+
+  useEffect(() => {
+    const storedAddress = wallet.getAddress();
+    if (storedAddress) {
+      setState({
+        address: storedAddress,
+        isConnected: true,
+        isLoading: false,
+      });
+    } else {
+      setState(prev => ({ ...prev, isLoading: false }));
+    }
+  }, []);
 
   const connect = useCallback(async () => {
     setState(prev => ({ ...prev, isLoading: true }));
     try {
-      const wallet = new StacksMockWallet();
-      await wallet.connect();
+      const session = await wallet.connect();
       setState({
-        address: wallet.address,
+        address: session.address,
         isConnected: true,
         isLoading: false,
       });
@@ -39,7 +51,8 @@ export function WalletProvider({ children }: { children: ReactNode }) {
     }
   }, []);
 
-  const disconnect = useCallback(() => {
+  const disconnect = useCallback(async () => {
+    await wallet.disconnect();
     setState({
       address: null,
       isConnected: false,
@@ -48,11 +61,8 @@ export function WalletProvider({ children }: { children: ReactNode }) {
   }, []);
 
   const signMessage = useCallback(async (message: string): Promise<string> => {
-    if (!state.address) {
-      throw new Error('Wallet not connected');
-    }
-    return `mock_signature_for_${message}`;
-  }, [state.address]);
+    return wallet.signMessage(message);
+  }, []);
 
   return (
     <WalletContext.Provider value={{ ...state, connect, disconnect, signMessage }}>
