@@ -2,17 +2,25 @@ import React from 'react';
 import { motion } from 'framer-motion';
 import { ExternalLink, Rocket, Clock } from 'lucide-react';
 import Button from './Button';
-
-interface Pitch {
-    id: string;
-    title: string;
-    description: string;
-    founder: string;
-    isBoosted: boolean;
-    status: string;
-}
+import type { Pitch } from '../lib/api';
 
 const PitchCard: React.FC<{ pitch: Pitch }> = ({ pitch }) => {
+    const formatAddress = (addr: string) => {
+        return `${addr.slice(0, 6)}...${addr.slice(-4)}`;
+    };
+
+    const formatDate = (dateStr: string) => {
+        const date = new Date(dateStr);
+        const now = new Date();
+        const diff = now.getTime() - date.getTime();
+        const days = Math.floor(diff / (1000 * 60 * 60 * 24));
+        
+        if (days === 0) return 'Today';
+        if (days === 1) return 'Yesterday';
+        if (days < 7) return `${days} days ago`;
+        return date.toLocaleDateString();
+    };
+
     return (
         <motion.div
             initial={{ opacity: 0, y: 20 }}
@@ -31,7 +39,7 @@ const PitchCard: React.FC<{ pitch: Pitch }> = ({ pitch }) => {
                     <Rocket size={24} />
                 </div>
                 <div className="flex items-center gap-2 text-white/40 text-xs">
-                    <Clock size={12} /> 2 days ago
+                    <Clock size={12} /> {formatDate(pitch.createdAt)}
                 </div>
             </div>
 
@@ -42,7 +50,7 @@ const PitchCard: React.FC<{ pitch: Pitch }> = ({ pitch }) => {
 
             <div className="flex items-center justify-between mt-auto pt-4 border-t border-white/10">
                 <div className="text-xs text-white/40">
-                    By <span className="text-white/80 font-mono">{pitch.founder.slice(0, 6)}...{pitch.founder.slice(-4)}</span>
+                    By <span className="text-white/80 font-mono">{formatAddress(pitch.founder)}</span>
                 </div>
                 <Button variant="ghost" className="p-2 h-auto text-xs flex items-center gap-1">
                     View Detail <ExternalLink size={14} />

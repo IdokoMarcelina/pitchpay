@@ -1,24 +1,42 @@
 import React from 'react';
+import { useParams, Link } from 'react-router-dom';
 import Navbar from '../components/Navbar';
 import Button from '../components/Button';
-import { Rocket, Shield, ExternalLink, ArrowLeft, Twitter, Github, Linkedin } from 'lucide-react';
-import { Link } from 'react-router-dom';
+import { Rocket, Shield, ExternalLink, ArrowLeft, Loader2, Twitter, Github, Linkedin } from 'lucide-react';
+import { usePitch } from '../hooks/usePitches';
 
 const PitchDetail: React.FC = () => {
-    // Mock data
-    const pitch = {
-        title: 'StacksSwap Pro',
-        description: 'Next-gen DEX with concentrated liquidity and gas optimizations for the Stacks ecosystem. StacksSwap Pro allows users to provide liquidity in specific price ranges, maximizing capital efficiency and reducing slippage. Built with Clarity 2.0 and fully audited for the Stacks Nakamoto release.',
-        website: 'https://stacksswap.pro',
-        founder: 'ST1PQHQKV0RJ7X6RGHN5X29D50Z6MR8BWG32W8A7',
-        isBoosted: true,
-        status: 'VERIFIED',
-        stats: {
-            views: '1.2k',
-            interests: '45',
-            raised: '50k STX'
-        }
-    };
+    const { id } = useParams<{ id: string }>();
+    const { pitch, isLoading, error } = usePitch(id || '');
+
+    if (isLoading) {
+        return (
+            <div className="min-h-screen pb-20">
+                <Navbar />
+                <main className="container mx-auto px-4 pt-32">
+                    <div className="flex items-center justify-center py-20">
+                        <Loader2 className="animate-spin text-brand-accent" size={40} />
+                    </div>
+                </main>
+            </div>
+        );
+    }
+
+    if (error || !pitch) {
+        return (
+            <div className="min-h-screen pb-20">
+                <Navbar />
+                <main className="container mx-auto px-4 pt-32">
+                    <div className="text-center py-20">
+                        <h2 className="text-2xl font-bold mb-4">Pitch not found</h2>
+                        <Link to="/explorer" className="text-brand-accent hover:underline">
+                            Back to Explorer
+                        </Link>
+                    </div>
+                </main>
+            </div>
+        );
+    }
 
     return (
         <div className="min-h-screen pb-20">
@@ -34,11 +52,19 @@ const PitchDetail: React.FC = () => {
                     <div className="lg:col-span-2 space-y-10">
                         <header>
                             <div className="flex items-center gap-3 mb-4">
-                                <span className="bg-brand-accent/20 text-brand-accent text-[10px] font-bold px-3 py-1 rounded-full uppercase tracking-widest border border-brand-accent/20">
-                                    Featured
-                                </span>
-                                <span className="bg-white/5 text-white/40 text-[10px] font-bold px-3 py-1 rounded-full uppercase tracking-widest border border-white/5">
-                                    DeFi
+                                {pitch.isBoosted && (
+                                    <span className="bg-brand-accent/20 text-brand-accent text-[10px] font-bold px-3 py-1 rounded-full uppercase tracking-widest border border-brand-accent/20">
+                                        Featured
+                                    </span>
+                                )}
+                                <span className={`text-[10px] font-bold px-3 py-1 rounded-full uppercase tracking-widest border ${
+                                    pitch.status === 'VERIFIED' 
+                                        ? 'bg-green-500/20 text-green-400 border-green-500/20'
+                                        : pitch.status === 'PAID'
+                                        ? 'bg-yellow-500/20 text-yellow-400 border-yellow-500/20'
+                                        : 'bg-white/5 text-white/40 border-white/5'
+                                }`}>
+                                    {pitch.status}
                                 </span>
                             </div>
                             <h1 className="text-5xl font-extrabold mb-6">{pitch.title}</h1>
@@ -46,21 +72,6 @@ const PitchDetail: React.FC = () => {
                                 {pitch.description}
                             </p>
                         </header>
-
-                        <div className="grid grid-cols-3 gap-4">
-                            <div className="glass p-6 rounded-2xl">
-                                <div className="text-white/40 text-[10px] uppercase tracking-widest mb-1">Views</div>
-                                <div className="text-2xl font-bold">{pitch.stats.views}</div>
-                            </div>
-                            <div className="glass p-6 rounded-2xl">
-                                <div className="text-white/40 text-[10px] uppercase tracking-widest mb-1">Interests</div>
-                                <div className="text-2xl font-bold">{pitch.stats.interests}</div>
-                            </div>
-                            <div className="glass p-6 rounded-2xl">
-                                <div className="text-white/40 text-[10px] uppercase tracking-widest mb-1">Raised</div>
-                                <div className="text-2xl font-bold text-brand-accent">{pitch.stats.raised}</div>
-                            </div>
-                        </div>
 
                         <div className="glass rounded-3xl p-8 overflow-hidden relative">
                             <div className="flex items-center gap-4 mb-6">
@@ -95,7 +106,12 @@ const PitchDetail: React.FC = () => {
                                 <Button variant="primary" className="w-full py-4">
                                     Show Interest <ExternalLink size={18} className="ml-2" />
                                 </Button>
-                                <a href={pitch.website} target="_blank" rel="noopener noreferrer" className="block text-center text-sm font-medium text-white/60 hover:text-white underline transition-colors">
+                                <a 
+                                    href={pitch.website} 
+                                    target="_blank" 
+                                    rel="noopener noreferrer" 
+                                    className="block text-center text-sm font-medium text-white/60 hover:text-white underline transition-colors"
+                                >
                                     Visit Website
                                 </a>
                             </div>

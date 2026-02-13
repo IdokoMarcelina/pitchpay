@@ -1,18 +1,16 @@
-import React from 'react';
+import React, { useState } from 'react';
+import { Link } from 'react-router-dom';
 import Navbar from '../components/Navbar';
 import PitchCard from '../components/PitchCard';
-import { Search, Filter, TrendingUp } from 'lucide-react';
+import { Search, Filter, TrendingUp, Loader2 } from 'lucide-react';
+import { usePitches } from '../hooks/usePitches';
 
 const Explorer: React.FC = () => {
-    // Mock data for UI only
-    const mockPitches = [
-        { id: '1', title: 'StacksSwap Pro', description: 'Next-gen DEX with concentrated liquidity and gas optimizations for the Stacks ecosystem.', founder: 'ST1PQHQKV0RJ7X6RGHN5X29D50Z6MR8BWG32W8A7', isBoosted: true, status: 'VERIFIED' },
-        { id: '2', title: 'ArGo Finance', description: 'Decentralized cloud governance platform for managing distributed computing resources.', founder: 'ST20X...4RE', isBoosted: false, status: 'PAID' },
-        { id: '3', title: 'NFTify Me', description: 'A seamless bridge for turning real-world assets into verifiable on-chain NFTs with legal backing.', founder: 'ST3A...B9X', isBoosted: true, status: 'VERIFIED' },
-        { id: '4', title: 'Clarity Insights', description: 'Advanced analytics and security scanning for Clarity smart contracts on Stacks.', founder: 'ST3X...8ER', isBoosted: false, status: 'VERIFIED' },
-        { id: '5', title: 'NeoBank Stacks', description: 'A crypto-native banking experience with integrated yield from Stacking.', founder: 'STG6...99L', isBoosted: false, status: 'PAID' },
-        { id: '6', title: 'DeSocial', description: 'Decentralized social graph leveraging Bitcoin security through Stacks layers.', founder: 'STRB...X42', isBoosted: true, status: 'VERIFIED' },
-    ];
+    const [page, setPage] = useState(1);
+    const { pitches, pagination, isLoading, error } = usePitches({ page, limit: 9 });
+
+    const featuredPitches = pitches.filter(p => p.isBoosted);
+    const latestPitches = pitches.filter(p => !p.isBoosted);
 
     return (
         <div className="min-h-screen pb-20">
@@ -40,29 +38,74 @@ const Explorer: React.FC = () => {
                     </div>
                 </div>
 
-                {/* Featured Section */}
-                <div className="mb-16">
-                    <div className="flex items-center gap-2 mb-6 text-brand-accent font-bold uppercase tracking-widest text-xs">
-                        <TrendingUp size={14} /> Featured Discoveries
+                {error && (
+                    <div className="mb-8 p-4 bg-red-500/10 border border-red-500/20 rounded-xl text-red-400">
+                        {error}
                     </div>
-                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-                        {mockPitches.filter(p => p.isBoosted).map(pitch => (
-                            <PitchCard key={pitch.id} pitch={pitch} />
-                        ))}
-                    </div>
-                </div>
+                )}
 
-                {/* All Section */}
-                <div>
-                    <div className="flex items-center gap-2 mb-6 text-white/40 font-bold uppercase tracking-widest text-xs">
-                        Latest Submissions
+                {isLoading ? (
+                    <div className="flex items-center justify-center py-20">
+                        <Loader2 className="animate-spin text-brand-accent" size={40} />
                     </div>
-                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-                        {mockPitches.filter(p => !p.isBoosted).map(pitch => (
-                            <PitchCard key={pitch.id} pitch={pitch} />
-                        ))}
-                    </div>
-                </div>
+                ) : (
+                    <>
+                        {/* Featured Section */}
+                        {featuredPitches.length > 0 && (
+                            <div className="mb-16">
+                                <div className="flex items-center gap-2 mb-6 text-brand-accent font-bold uppercase tracking-widest text-xs">
+                                    <TrendingUp size={14} /> Featured Discoveries
+                                </div>
+                                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+                                    {featuredPitches.map(pitch => (
+                                        <Link key={pitch._id} to={`/pitch/${pitch._id}`}>
+                                            <PitchCard pitch={pitch} />
+                                        </Link>
+                                    ))}
+                                </div>
+                            </div>
+                        )}
+
+                        {/* All Section */}
+                        <div>
+                            <div className="flex items-center gap-2 mb-6 text-white/40 font-bold uppercase tracking-widest text-xs">
+                                Latest Submissions
+                            </div>
+                            {latestPitches.length > 0 ? (
+                                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+                                    {latestPitches.map(pitch => (
+                                        <Link key={pitch._id} to={`/pitch/${pitch._id}`}>
+                                            <PitchCard pitch={pitch} />
+                                        </Link>
+                                    ))}
+                                </div>
+                            ) : (
+                                <div className="text-white/40 text-center py-12">
+                                    No pitches yet. Be the first to submit!
+                                </div>
+                            )}
+                        </div>
+
+                        {/* Pagination */}
+                        {pagination && pagination.pages > 1 && (
+                            <div className="flex justify-center gap-2 mt-12">
+                                {Array.from({ length: pagination.pages }, (_, i) => i + 1).map(pageNum => (
+                                    <button
+                                        key={pageNum}
+                                        onClick={() => setPage(pageNum)}
+                                        className={`w-10 h-10 rounded-xl transition-colors ${
+                                            pageNum === page 
+                                                ? 'bg-brand-accent text-white' 
+                                                : 'glass text-white/60 hover:text-white'
+                                        }`}
+                                    >
+                                        {pageNum}
+                                    </button>
+                                ))}
+                            </div>
+                        )}
+                    </>
+                )}
             </main>
         </div>
     );
