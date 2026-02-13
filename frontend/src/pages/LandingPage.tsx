@@ -122,9 +122,9 @@ const LandingPage: React.FC = () => {
                             className="glass rounded-3xl p-4 aspect-video flex items-center justify-center overflow-hidden border-brand-accent/20"
                         >
                             <img
-                                src="file:///C:/Users/HP/.gemini/antigravity/brain/cdec94db-dea8-40a4-b840-f2e0d3f0b2d2/pitching_people_illustration.png"
+                                src="https://images.unsplash.com/photo-1559136555-9303baea8ebd?auto=format&fit=crop&q=80&w=1000"
                                 alt="People pitching product"
-                                className="w-full h-full object-cover rounded-2xl"
+                                className="w-full h-full object-cover rounded-2xl grayscale hover:grayscale-0 transition-all duration-500"
                             />
                         </motion.div>
 
