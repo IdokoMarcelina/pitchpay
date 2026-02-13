@@ -1,7 +1,7 @@
-import { disconnect, request } from '@stacks/connect';
 import { STACKS_TESTNET } from '@stacks/network';
 
 let currentAddress: string | null = null;
+let walletModule: typeof import('@stacks/connect') | null = null;
 
 const AUTH_STORAGE_KEY = 'stacks-wallet-auth';
 
@@ -39,8 +39,17 @@ function clearAuth(): void {
   }
 }
 
+async function getWallet() {
+  if (!walletModule) {
+    walletModule = await import('@stacks/connect');
+  }
+  return walletModule;
+}
+
 export const wallet = {
   async connect(): Promise<WalletSession> {
+    const { request } = await getWallet();
+    
     try {
       const response = await request('stx_getAddresses', {
         network: 'testnet',
@@ -64,6 +73,7 @@ export const wallet = {
 
   async disconnect(): Promise<void> {
     try {
+      const { disconnect } = await getWallet();
       disconnect();
     } catch (e) {
       console.error('Error disconnecting wallet:', e);
@@ -95,6 +105,7 @@ export const wallet = {
   },
 
   async signMessage(message: string): Promise<string> {
+    const { request } = await getWallet();
     const address = this.getAddress();
     if (!address) {
       throw new Error('Wallet not connected');

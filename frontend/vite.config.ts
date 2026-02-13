@@ -8,4 +8,16 @@ export default defineConfig({
     react(),
     tailwindcss(),
   ],
+  build: {
+    rollupOptions: {
+      output: {
+        manualChunks: {
+          'vendor-react': ['react', 'react-dom', 'react-router-dom'],
+          'vendor-motion': ['framer-motion'],
+          'vendor-stacks': ['@stacks/connect', '@stacks/network'],
+          'vendor-lucide': ['lucide-react'],
+        },
+      },
+    },
+  },
 })
