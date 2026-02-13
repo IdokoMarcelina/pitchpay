@@ -7,13 +7,16 @@ import { createPitchSchema, verifyPitchSchema, updatePitchSchema } from '../vali
 export class PitchController {
     static async createPitch(req: Request, res: Response) {
         try {
-            const { title, description, website, founder } = req.body;
+            const { title, description, website, founder, category, logoUrl, deckUrl } = req.body;
 
             return await X402Service.handlePitchPaymentRequired(req, res, {
                 title,
                 description,
                 website,
                 founder,
+                category,
+                logoUrl,
+                deckUrl,
             });
         } catch (error) {
             console.error('Error in createPitch:', error);
@@ -46,13 +49,37 @@ export class PitchController {
             const page = Math.max(1, parseInt(req.query.page as string) || 1);
             const limit = Math.min(50, Math.max(1, parseInt(req.query.limit as string) || 10));
             const skip = (page - 1) * limit;
+            
+            const search = req.query.search as string;
+            const category = req.query.category as string;
+            const sort = req.query.sort as string || 'recent';
+
+            const query: any = { status: { $in: ['PAID', 'VERIFIED'] } };
+            
+            if (search) {
+                query.$or = [
+                    { title: { $regex: search, $options: 'i' } },
+                    { description: { $regex: search, $options: 'i' } }
+                ];
+            }
+            
+            if (category && category !== 'All') {
+                query.category = category;
+            }
+
+            let sortOption: any = { isBoosted: -1, createdAt: -1 };
+            if (sort === 'trending') {
+                sortOption = { 'investments.amount': -1, isBoosted: -1 };
+            } else if (sort === 'oldest') {
+                sortOption = { createdAt: 1 };
+            }
 
             const [pitches, total] = await Promise.all([
-                Pitch.find({ status: { $in: ['PAID', 'VERIFIED'] } })
-                    .sort({ isBoosted: -1, createdAt: -1 })
+                Pitch.find(query)
+                    .sort(sortOption)
                     .skip(skip)
                     .limit(limit),
-                Pitch.countDocuments({ status: { $in: ['PAID', 'VERIFIED'] } })
+                Pitch.countDocuments(query)
             ]);
 
             res.json({
@@ -249,6 +276,115 @@ export class PitchController {
             }
         } catch (error) {
             console.error('Error in verifyInvestment:', error);
+            res.status(500).json({ error: 'Internal server error' });
+        }
+    }
+
+    static async getUserProfile(req: Request, res: Response) {
+        try {
+            const address = req.params.address as string;
+
+            if (!address) {
+                return res.status(400).json({ error: 'Address required' });
+            }
+
+            const lowerAddress = address.toLowerCase();
+
+            const pitches = await Pitch.find({ 
+                founder: lowerAddress,
+                status: { $in: ['PAID', 'VERIFIED'] }
+            });
+
+            const investedPitches = await Pitch.find({
+                'investments.investor': lowerAddress,
+                status: { $in: ['PAID', 'VERIFIED'] }
+            });
+
+            const totalInvested = investedPitches.reduce((sum, pitch) => {
+                const userInvestments = pitch.investments?.filter(i => i.investor.toLowerCase() === lowerAddress) || [];
+                return sum + userInvestments.reduce((s, i) => s + i.amount, 0);
+            }, 0);
+
+            const totalRaised = pitches.reduce((sum, pitch) => {
+                return sum + (pitch.investments?.reduce((s, i) => s + i.amount, 0) || 0);
+            }, 0);
+
+            const notifications = pitches.flatMap(p => 
+                (p.notifications || []).map(n => ({
+                    ...n,
+                    pitchTitle: p.title
+                }))
+            ).sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+
+            res.json({
+                address: lowerAddress,
+                pitches,
+                investedPitches,
+                stats: {
+                    pitchesCreated: pitches.length,
+                    pitchesInvested: investedPitches.length,
+                    totalInvested,
+                    totalRaised,
+                },
+                notifications
+            });
+        } catch (error) {
+            console.error('Error in getUserProfile:', error);
+            res.status(500).json({ error: 'Internal server error' });
+        }
+    }
+
+    static async getNotifications(req: Request, res: Response) {
+        try {
+            const address = req.params.address as string;
+
+            if (!address) {
+                return res.status(400).json({ error: 'Address required' });
+            }
+
+            const lowerAddress = address.toLowerCase();
+
+            const pitches = await Pitch.find({ founder: lowerAddress });
+            
+            const notifications = pitches.flatMap(p => 
+                (p.notifications || []).map(n => ({
+                    ...n.toObject(),
+                    pitchTitle: p.title
+                }))
+            ).sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+
+            res.json({ notifications });
+        } catch (error) {
+            console.error('Error in getNotifications:', error);
+            res.status(500).json({ error: 'Internal server error' });
+        }
+    }
+
+    static async markNotificationRead(req: Request, res: Response) {
+        try {
+            const { pitchId, notificationId } = req.params;
+            const address = req.body.address as string;
+
+            if (!address) {
+                return res.status(400).json({ error: 'Address required' });
+            }
+
+            const pitch = await Pitch.findOne({ _id: pitchId, founder: address.toLowerCase() });
+            
+            if (!pitch) {
+                return res.status(404).json({ error: 'Pitch not found' });
+            }
+
+            const notification = pitch.notifications?.find(n => n._id.toString() === notificationId);
+            
+            if (notification) {
+                notification.read = true;
+                await pitch.save();
+            }
+
+            res.json({ success: true });
+        } catch (error) {
+            console.error('Error in markNotificationRead:', error);
             res.status(500).json({ error: 'Internal server error' });
         }
     }

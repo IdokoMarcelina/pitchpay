@@ -6,6 +6,7 @@ import CreatePitch from './pages/CreatePitch';
 import PitchDetail from './pages/PitchDetail';
 import Analytics from './pages/Analytics';
 import Boost from './pages/Boost';
+import Profile from './pages/Profile';
 import { useAnalytics } from './hooks/useAnalytics';
 
 function AppContent() {
@@ -20,6 +21,7 @@ function AppContent() {
         <Route path="/boost" element={<Boost />} />
         <Route path="/create" element={<CreatePitch />} />
         <Route path="/pitch/:id" element={<PitchDetail />} />
+        <Route path="/profile/:address" element={<Profile />} />
         <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>
     </div>

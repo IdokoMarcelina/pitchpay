@@ -3,10 +3,10 @@ import { useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import Navbar from '../components/Navbar';
 import Button from '../components/Button';
-import { Rocket, Globe, FileText, AlertCircle, Loader2, ArrowRight, CheckCircle } from 'lucide-react';
+import { Rocket, Globe, FileText, AlertCircle, Loader2, ArrowRight, CheckCircle, Image, FileUp } from 'lucide-react';
 import { useWallet } from '../context/WalletContext';
 import { usePayment } from '../hooks/usePayment';
-import type { PaymentDetails } from '../lib/api';
+import { type PaymentDetails, PITCH_CATEGORIES, type PitchCategory } from '../lib/api';
 
 const CreatePitch: React.FC = () => {
     const navigate = useNavigate();
@@ -17,6 +17,9 @@ const CreatePitch: React.FC = () => {
         title: '',
         description: '',
         website: '',
+        category: 'Other' as PitchCategory,
+        logoUrl: '',
+        deckUrl: '',
     });
     const [error, setError] = useState<string | null>(null);
     const [paymentDetails, setPaymentDetails] = useState<PaymentDetails | null>(null);
@@ -24,7 +27,7 @@ const CreatePitch: React.FC = () => {
     const [pitchId, setPitchId] = useState<string | null>(null);
     const [txid, setTxid] = useState<string | null>(null);
 
-    const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
+    const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
         setFormData(prev => ({
             ...prev,
             [e.target.name]: e.target.value
@@ -41,7 +44,7 @@ const CreatePitch: React.FC = () => {
         }
 
         if (!formData.title || !formData.description || !formData.website) {
-            setError('Please fill in all fields');
+            setError('Please fill in all required fields');
             return;
         }
 
@@ -51,6 +54,9 @@ const CreatePitch: React.FC = () => {
                 description: formData.description,
                 website: formData.website,
                 founder: address,
+                category: formData.category,
+                logoUrl: formData.logoUrl || undefined,
+                deckUrl: formData.deckUrl || undefined,
             },
             (details) => {
                 setPaymentDetails(details);
@@ -230,7 +236,7 @@ const CreatePitch: React.FC = () => {
                                 <div className="grid md:grid-cols-2 gap-6">
                                     <div className="space-y-2">
                                         <label className="text-sm font-semibold text-white/60 flex items-center gap-2">
-                                            <FileText size={14} /> Startup Name
+                                            <FileText size={14} /> Startup Name *
                                         </label>
                                         <input
                                             type="text"
@@ -239,11 +245,12 @@ const CreatePitch: React.FC = () => {
                                             onChange={handleChange}
                                             placeholder="e.g. StacksSwap"
                                             className="w-full bg-white/5 border border-white/10 rounded-xl py-3 px-4 focus:outline-none focus:border-brand-accent/50 transition-colors"
+                                            required
                                         />
                                     </div>
                                     <div className="space-y-2">
                                         <label className="text-sm font-semibold text-white/60 flex items-center gap-2">
-                                            <Globe size={14} /> Website URL
+                                            <Globe size={14} /> Website URL *
                                         </label>
                                         <input
                                             type="url"
@@ -252,13 +259,28 @@ const CreatePitch: React.FC = () => {
                                             onChange={handleChange}
                                             placeholder="https://yourstartup.com"
                                             className="w-full bg-white/5 border border-white/10 rounded-xl py-3 px-4 focus:outline-none focus:border-brand-accent/50 transition-colors"
+                                            required
                                         />
                                     </div>
                                 </div>
 
                                 <div className="space-y-2">
+                                    <label className="text-sm font-semibold text-white/60">Category</label>
+                                    <select
+                                        name="category"
+                                        value={formData.category}
+                                        onChange={handleChange}
+                                        className="w-full bg-white/5 border border-white/10 rounded-xl py-3 px-4 focus:outline-none focus:border-brand-accent/50 transition-colors"
+                                    >
+                                        {PITCH_CATEGORIES.map(cat => (
+                                            <option key={cat} value={cat}>{cat}</option>
+                                        ))}
+                                    </select>
+                                </div>
+
+                                <div className="space-y-2">
                                     <label className="text-sm font-semibold text-white/60 flex items-center gap-2">
-                                        <AlertCircle size={14} /> Short Description
+                                        <AlertCircle size={14} /> Short Description *
                                     </label>
                                     <textarea
                                         name="description"
@@ -267,7 +289,37 @@ const CreatePitch: React.FC = () => {
                                         rows={4}
                                         placeholder="Tell us about your startup in 280 characters..."
                                         className="w-full bg-white/5 border border-white/10 rounded-xl py-3 px-4 focus:outline-none focus:border-brand-accent/50 transition-colors resize-none"
+                                        required
                                     ></textarea>
+                                </div>
+
+                                <div className="grid md:grid-cols-2 gap-6">
+                                    <div className="space-y-2">
+                                        <label className="text-sm font-semibold text-white/60 flex items-center gap-2">
+                                            <Image size={14} /> Logo URL
+                                        </label>
+                                        <input
+                                            type="url"
+                                            name="logoUrl"
+                                            value={formData.logoUrl}
+                                            onChange={handleChange}
+                                            placeholder="https://example.com/logo.png"
+                                            className="w-full bg-white/5 border border-white/10 rounded-xl py-3 px-4 focus:outline-none focus:border-brand-accent/50 transition-colors"
+                                        />
+                                    </div>
+                                    <div className="space-y-2">
+                                        <label className="text-sm font-semibold text-white/60 flex items-center gap-2">
+                                            <FileUp size={14} /> Deck URL
+                                        </label>
+                                        <input
+                                            type="url"
+                                            name="deckUrl"
+                                            value={formData.deckUrl}
+                                            onChange={handleChange}
+                                            placeholder="https://example.com/deck.pdf"
+                                            className="w-full bg-white/5 border border-white/10 rounded-xl py-3 px-4 focus:outline-none focus:border-brand-accent/50 transition-colors"
+                                        />
+                                    </div>
                                 </div>
 
                                 <div className="p-6 bg-brand-accent/5 rounded-2xl border border-brand-accent/20 flex gap-4">

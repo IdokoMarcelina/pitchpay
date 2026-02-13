@@ -1,5 +1,7 @@
 import { z } from 'zod';
 
+export const PITCH_CATEGORIES = ['DeFi', 'NFT', 'Gaming', 'Social', 'Infrastructure', 'Tools', 'Other'] as const;
+
 export const createPitchSchema = z.object({
   title: z.string()
     .min(3, 'Title must be at least 3 characters')
@@ -13,6 +15,9 @@ export const createPitchSchema = z.object({
   founder: z.string()
     .min(1, 'Founder wallet address is required')
     .max(100, 'Founder address too long'),
+  category: z.enum(PITCH_CATEGORIES).optional().default('Other'),
+  logoUrl: z.string().url().optional(),
+  deckUrl: z.string().url().optional(),
 });
 
 export const verifyPitchSchema = z.object({
@@ -34,6 +39,9 @@ export const updatePitchSchema = z.object({
     .url('Invalid website URL')
     .max(255, 'Website must be at most 255 characters')
     .optional(),
+  category: z.enum(PITCH_CATEGORIES).optional(),
+  logoUrl: z.string().url().optional(),
+  deckUrl: z.string().url().optional(),
 }).strict();
 
 export type CreatePitchInput = z.infer<typeof createPitchSchema>;

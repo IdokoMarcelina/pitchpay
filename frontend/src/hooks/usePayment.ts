@@ -1,5 +1,5 @@
 import { useState, useCallback } from 'react';
-import { api, type PaymentDetails } from '../lib/api';
+import { api, type PaymentDetails, type PitchCategory } from '../lib/api';
 import { payForPitch, payForBoost, type TransactionResult } from '../lib/transactions';
 
 export function usePayment() {
@@ -7,7 +7,7 @@ export function usePayment() {
   const [error, setError] = useState<string | null>(null);
 
   const createPitchWithPayment = useCallback(async (
-    data: { title: string; description: string; website: string; founder: string },
+    data: { title: string; description: string; website: string; founder: string; category?: PitchCategory; logoUrl?: string; deckUrl?: string },
     onPaymentRequired: (details: PaymentDetails) => void,
     onSuccess: () => void,
     onError: (error: string) => void

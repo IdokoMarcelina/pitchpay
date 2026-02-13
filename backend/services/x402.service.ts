@@ -198,6 +198,18 @@ export class X402Service {
                         txid,
                         createdAt: new Date()
                     } as any);
+                    
+                    pitch.notifications.push({
+                        type: 'investment',
+                        from: investor.toLowerCase(),
+                        pitchId: pitch._id.toString(),
+                        pitchTitle: pitch.title,
+                        amount,
+                        txid,
+                        read: false,
+                        createdAt: new Date()
+                    } as any);
+                    
                     await pitch.save();
                 }
             }

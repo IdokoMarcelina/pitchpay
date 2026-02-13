@@ -15,5 +15,8 @@ router.post('/pitches/:id/verify-investment', PitchController.verifyInvestment);
 router.post('/pitches/:id/sync', PitchController.syncPitch);
 router.patch('/pitches/:id', requireAuth, updatePitchValidation, PitchController.updatePitch);
 router.delete('/pitches/:id', requireAuth, PitchController.deletePitch);
+router.get('/users/:address', PitchController.getUserProfile);
+router.get('/users/:address/notifications', PitchController.getNotifications);
+router.patch('/pitches/:pitchId/notifications/:notificationId/read', PitchController.markNotificationRead);
 
 export default router;

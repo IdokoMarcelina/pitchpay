@@ -1,5 +1,8 @@
 import { API_CONFIG } from './config';
 
+export const PITCH_CATEGORIES = ['DeFi', 'NFT', 'Gaming', 'Social', 'Infrastructure', 'Tools', 'Other'] as const;
+export type PitchCategory = typeof PITCH_CATEGORIES[number];
+
 export interface Investment {
   investor: string;
   amount: number;
@@ -14,6 +17,9 @@ export interface Pitch {
   description: string;
   website: string;
   founder: string;
+  category: PitchCategory;
+  logoUrl?: string;
+  deckUrl?: string;
   isBoosted: boolean;
   txid?: string;
   status: 'PENDING' | 'PAID' | 'VERIFIED';
@@ -88,8 +94,8 @@ async function fetchApi<T>(
 
 export const api = {
   // Pitches
-  getPitches: (page = 1, limit = 10) => 
-    fetchApi<PaginatedResponse<Pitch>>(`/pitches?page=${page}&limit=${limit}`),
+  getPitches: (page = 1, limit = 10, search?: string, category?: string, sort?: string) => 
+    fetchApi<PaginatedResponse<Pitch>>(`/pitches?page=${page}&limit=${limit}${search ? `&search=${encodeURIComponent(search)}` : ''}${category ? `&category=${encodeURIComponent(category)}` : ''}${sort ? `&sort=${sort}` : ''}`),
   
   getPitch: (id: string) => 
     fetchApi<Pitch>(`/pitches/${id}`),
@@ -147,6 +153,25 @@ export const api = {
       method: 'POST',
       body: JSON.stringify({ txid, investor, amount }),
     }),
+  
+  // User Profile
+  getUserProfile: (address: string) => 
+    fetchApi<{
+      address: string;
+      pitches: Pitch[];
+      investedPitches: Pitch[];
+      stats: {
+        pitchesCreated: number;
+        pitchesInvested: number;
+        totalInvested: number;
+        totalRaised: number;
+      };
+      notifications: any[];
+    }>(`/users/${address}`),
+  
+  // Notifications
+  getNotifications: (address: string) => 
+    fetchApi<{ notifications: any[] }>(`/users/${address}/notifications`),
   
   // Sync
   syncPitch: (id: string) => 

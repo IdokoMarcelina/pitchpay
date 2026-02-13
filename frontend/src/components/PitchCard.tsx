@@ -1,6 +1,6 @@
 import React from 'react';
 import { motion } from 'framer-motion';
-import { ExternalLink, Rocket, Clock } from 'lucide-react';
+import { ExternalLink, Rocket, Clock, TrendingUp, Tag } from 'lucide-react';
 import Button from './Button';
 import type { Pitch } from '../lib/api';
 
@@ -21,6 +21,8 @@ const PitchCard: React.FC<{ pitch: Pitch }> = ({ pitch }) => {
         return date.toLocaleDateString();
     };
 
+    const totalInvested = pitch.investments?.reduce((sum, i) => sum + i.amount, 0) || 0;
+
     return (
         <motion.div
             initial={{ opacity: 0, y: 20 }}
@@ -35,18 +37,35 @@ const PitchCard: React.FC<{ pitch: Pitch }> = ({ pitch }) => {
             )}
 
             <div className="flex justify-between items-start mb-4">
-                <div className="h-12 w-12 rounded-xl bg-white/5 flex items-center justify-center text-brand-accent border border-white/10 group-hover:border-brand-accent/30">
-                    <Rocket size={24} />
-                </div>
+                {pitch.logoUrl ? (
+                    <img src={pitch.logoUrl} alt={pitch.title} className="h-12 w-12 rounded-xl object-cover" />
+                ) : (
+                    <div className="h-12 w-12 rounded-xl bg-white/5 flex items-center justify-center text-brand-accent border border-white/10 group-hover:border-brand-accent/30">
+                        <Rocket size={24} />
+                    </div>
+                )}
                 <div className="flex items-center gap-2 text-white/40 text-xs">
                     <Clock size={12} /> {formatDate(pitch.createdAt)}
                 </div>
             </div>
 
+            <div className="flex items-center gap-2 mb-2">
+                <span className="text-[10px] font-medium px-2 py-1 rounded-full bg-white/5 text-white/60 border border-white/10 flex items-center gap-1">
+                    <Tag size={10} /> {pitch.category}
+                </span>
+            </div>
+
             <h3 className="text-xl font-bold mb-2 group-hover:text-brand-accent transition-colors">{pitch.title}</h3>
-            <p className="text-white/60 text-sm mb-6 line-clamp-3">
+            <p className="text-white/60 text-sm mb-4 line-clamp-2">
                 {pitch.description}
             </p>
+
+            {totalInvested > 0 && (
+                <div className="flex items-center gap-2 text-green-400 text-sm mb-4">
+                    <TrendingUp size={14} />
+                    <span className="font-medium">{(totalInvested / 1000000).toFixed(2)} STX raised</span>
+                </div>
+            )}
 
             <div className="flex items-center justify-between mt-auto pt-4 border-t border-white/10">
                 <div className="text-xs text-white/40">
