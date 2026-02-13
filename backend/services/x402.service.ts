@@ -185,10 +185,22 @@ export class X402Service {
         };
     }
 
-    static async verifyInvestmentPayment(pitchId: string, txid: string) {
+    static async verifyInvestmentPayment(pitchId: string, txid: string, investor?: string, amount?: number) {
         const tx = (await StacksService.verifyTransaction(txid)) as StacksTx | null;
 
         if (tx && typeof tx.tx_status === 'string' && tx.tx_status === 'success') {
+            if (investor && amount) {
+                const pitch = await Pitch.findById(pitchId);
+                if (pitch) {
+                    pitch.investments.push({
+                        investor: investor.toLowerCase(),
+                        amount,
+                        txid,
+                        createdAt: new Date()
+                    } as any);
+                    await pitch.save();
+                }
+            }
             return true;
         }
 

@@ -37,7 +37,7 @@ const PitchDetail: React.FC = () => {
     };
 
     const handleSubmitInvestment = async () => {
-        if (!paymentDetails?.payment_details.contract_call?.args?.[0] || !pitch) return;
+        if (!paymentDetails?.payment_details.contract_call?.args?.[0] || !pitch || !address) return;
         
         setIsInvesting(true);
         setInvestError(null);
@@ -51,7 +51,7 @@ const PitchDetail: React.FC = () => {
             if (result.success && result.txid) {
                 setPendingTxid(result.txid);
                 
-                await api.verifyInvestment(pitch._id, result.txid);
+                await api.verifyInvestment(pitch._id, result.txid, address, parseInt(amount));
                 setInvestSuccess(true);
             } else {
                 throw new Error('Transaction failed');

@@ -232,13 +232,13 @@ export class PitchController {
     static async verifyInvestment(req: Request, res: Response) {
         try {
             const id = req.params.id as string;
-            const { txid } = req.body;
+            const { txid, investor, amount } = req.body;
 
             if (!txid) {
                 return res.status(400).json({ error: 'Missing TXID' });
             }
 
-            const verified = await X402Service.verifyInvestmentPayment(id, txid);
+            const verified = await X402Service.verifyInvestmentPayment(id, txid, investor, amount);
 
             if (verified) {
                 res.json({ message: 'Investment verified' });

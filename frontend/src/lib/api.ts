@@ -1,5 +1,12 @@
 import { API_CONFIG } from './config';
 
+export interface Investment {
+  investor: string;
+  amount: number;
+  txid: string;
+  createdAt: string;
+}
+
 export interface Pitch {
   _id: string;
   pitchIdHash: string;
@@ -10,6 +17,7 @@ export interface Pitch {
   isBoosted: boolean;
   txid?: string;
   status: 'PENDING' | 'PAID' | 'VERIFIED';
+  investments: Investment[];
   createdAt: string;
 }
 
@@ -134,10 +142,10 @@ export const api = {
       body: JSON.stringify({ amount }),
     }),
   
-  verifyInvestment: (id: string, txid: string) => 
+  verifyInvestment: (id: string, txid: string, investor: string, amount: number) => 
     fetchApi<{ message: string }>(`/pitches/${id}/verify-investment`, {
       method: 'POST',
-      body: JSON.stringify({ txid }),
+      body: JSON.stringify({ txid, investor, amount }),
     }),
   
   // Sync
