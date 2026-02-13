@@ -6,12 +6,29 @@ import rateLimit from 'express-rate-limit';
 import pitchRoutes from './routes/pitch';
 import authRoutes from './routes/auth';
 import { errorHandler } from './middleware/error.middleware';
+import AuthSession from './models/AuthSession';
 
 dotenv.config();
 
 const app = express();
 const PORT = process.env.PORT || 3000;
 const MONGODB_URI = process.env.MONGODB_URI || 'mongodb://localhost:27017/pitchpay';
+
+const CLEANUP_INTERVAL = 15 * 60 * 1000;
+
+async function cleanupExpiredNonces() {
+    try {
+        const result = await AuthSession.deleteMany({ expiresAt: { $lte: new Date() } });
+        if (result.deletedCount > 0) {
+            console.log(`Cleaned up ${result.deletedCount} expired auth nonces`);
+        }
+    } catch (error) {
+        console.error('Error cleaning up expired nonces:', error);
+    }
+}
+
+setInterval(cleanupExpiredNonces, CLEANUP_INTERVAL);
+cleanupExpiredNonces();
 
 const limiter = rateLimit({
     windowMs: 15 * 60 * 1000,

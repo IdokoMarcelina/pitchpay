@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import Navbar from '../components/Navbar';
 import Button from '../components/Button';
-import { Rocket, Globe, FileText, AlertCircle, Loader2, ArrowRight } from 'lucide-react';
+import { Rocket, Globe, FileText, AlertCircle, Loader2, ArrowRight, CheckCircle } from 'lucide-react';
 import { useWallet } from '../context/WalletContext';
 import { usePayment } from '../hooks/usePayment';
 import type { PaymentDetails } from '../lib/api';
@@ -11,7 +11,7 @@ import type { PaymentDetails } from '../lib/api';
 const CreatePitch: React.FC = () => {
     const navigate = useNavigate();
     const { address, isConnected, connect } = useWallet();
-    const { isProcessing, createPitchWithPayment } = usePayment();
+    const { isProcessing, createPitchWithPayment, submitPitchPayment, verifyPitchPayment } = usePayment();
 
     const [formData, setFormData] = useState({
         title: '',
@@ -20,6 +20,9 @@ const CreatePitch: React.FC = () => {
     });
     const [error, setError] = useState<string | null>(null);
     const [paymentDetails, setPaymentDetails] = useState<PaymentDetails | null>(null);
+    const [paymentStep, setPaymentStep] = useState<'details' | 'pending' | 'verifying' | 'success'>('details');
+    const [pitchId, setPitchId] = useState<string | null>(null);
+    const [txid, setTxid] = useState<string | null>(null);
 
     const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
         setFormData(prev => ({
@@ -51,6 +54,7 @@ const CreatePitch: React.FC = () => {
             },
             (details) => {
                 setPaymentDetails(details);
+                setPitchId(details.payment_details.internal_id);
             },
             () => {
                 navigate('/dashboard');
@@ -59,6 +63,51 @@ const CreatePitch: React.FC = () => {
                 setError(err);
             }
         );
+    };
+
+    const handlePayment = async () => {
+        if (!paymentDetails?.payment_details.contract_call?.args?.[0]) {
+            setError('Missing payment details');
+            return;
+        }
+
+        const pitchIdHash = paymentDetails.payment_details.contract_call.args[0].replace('0x', '');
+        
+        setPaymentStep('pending');
+        setError(null);
+
+        try {
+            await submitPitchPayment(
+                pitchIdHash,
+                (txId) => {
+                    setTxid(txId);
+                },
+                async () => {
+                    setPaymentStep('verifying');
+                    if (pitchId && txid) {
+                        await verifyPitchPayment(
+                            pitchId,
+                            txid,
+                            () => {
+                                setPaymentStep('success');
+                                setTimeout(() => navigate('/dashboard'), 2000);
+                            },
+                            (err) => {
+                                setError(err);
+                                setPaymentStep('details');
+                            }
+                        );
+                    }
+                },
+                (err) => {
+                    setError(err);
+                    setPaymentStep('details');
+                }
+            );
+        } catch (err) {
+            setError((err as Error).message);
+            setPaymentStep('details');
+        }
     };
 
     if (!isConnected) {
@@ -112,7 +161,13 @@ const CreatePitch: React.FC = () => {
                             </div>
                         )}
 
-                        {paymentDetails ? (
+                        {paymentStep === 'success' ? (
+                            <div className="text-center py-8">
+                                <CheckCircle size={64} className="mx-auto text-green-500 mb-4" />
+                                <h2 className="text-2xl font-bold mb-2">Pitch Created!</h2>
+                                <p className="text-white/60">Redirecting to dashboard...</p>
+                            </div>
+                        ) : paymentDetails ? (
                             <div className="space-y-6">
                                 <div className="p-6 bg-brand-accent/10 rounded-2xl border border-brand-accent/30">
                                     <h3 className="font-bold text-lg mb-4 text-brand-accent">Payment Required</h3>
@@ -127,23 +182,45 @@ const CreatePitch: React.FC = () => {
                                         </div>
                                     )}
                                 </div>
+                                
+                                {paymentStep === 'pending' && (
+                                    <div className="p-4 bg-yellow-500/10 border border-yellow-500/20 rounded-xl text-yellow-400 text-center">
+                                        <Loader2 className="animate-spin inline mr-2" />
+                                        Waiting for transaction confirmation...
+                                    </div>
+                                )}
+                                
+                                {paymentStep === 'verifying' && (
+                                    <div className="p-4 bg-blue-500/10 border border-blue-500/20 rounded-xl text-blue-400 text-center">
+                                        <Loader2 className="animate-spin inline mr-2" />
+                                        Verifying payment on-chain...
+                                    </div>
+                                )}
+
                                 <div className="flex gap-4">
                                     <Button 
                                         variant="secondary" 
-                                        onClick={() => setPaymentDetails(null)}
+                                        onClick={() => {
+                                            setPaymentDetails(null);
+                                            setPaymentStep('details');
+                                        }}
                                         className="flex-1"
+                                        disabled={paymentStep === 'pending' || paymentStep === 'verifying'}
                                     >
                                         Back
                                     </Button>
                                     <Button 
                                         variant="primary" 
                                         className="flex-1"
-                                        disabled={isProcessing}
+                                        disabled={isProcessing || paymentStep === 'pending' || paymentStep === 'verifying'}
+                                        onClick={handlePayment}
                                     >
                                         {isProcessing ? (
                                             <><Loader2 className="animate-spin mr-2" /> Processing...</>
+                                        ) : paymentStep === 'pending' ? (
+                                            <><Loader2 className="animate-spin mr-2" /> Confirming...</>
                                         ) : (
-                                            <>I've sent the transaction</>
+                                            <>Pay {paymentDetails.payment_details.amount / 1000000} STX</>
                                         )}
                                     </Button>
                                 </div>

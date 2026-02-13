@@ -1,5 +1,6 @@
 import { useState, useCallback } from 'react';
 import { api, type PaymentDetails } from '../lib/api';
+import { payForPitch, payForBoost, type TransactionResult } from '../lib/transactions';
 
 export function usePayment() {
   const [isProcessing, setIsProcessing] = useState(false);
@@ -22,8 +23,8 @@ export function usePayment() {
       } else {
         onSuccess();
       }
-    } catch (err: any) {
-      const errorMessage = err.message || 'Failed to create pitch';
+    } catch (err: unknown) {
+      const errorMessage = (err as Error).message || 'Failed to create pitch';
       setError(errorMessage);
       onError(errorMessage);
     } finally {
@@ -31,7 +32,34 @@ export function usePayment() {
     }
   }, []);
 
-  const verifyPayment = useCallback(async (
+  const submitPitchPayment = useCallback(async (
+    pitchIdHash: string,
+    onPending: (txid: string) => void,
+    onSuccess: () => void,
+    onError: (error: string) => void
+  ) => {
+    setIsProcessing(true);
+    setError(null);
+
+    try {
+      const result: TransactionResult = await payForPitch(pitchIdHash);
+      
+      if (result.success && result.txid) {
+        onPending(result.txid);
+        onSuccess();
+      } else {
+        throw new Error('Transaction failed');
+      }
+    } catch (err: unknown) {
+      const errorMessage = (err as Error).message || 'Payment failed';
+      setError(errorMessage);
+      onError(errorMessage);
+    } finally {
+      setIsProcessing(false);
+    }
+  }, []);
+
+  const verifyPitchPayment = useCallback(async (
     pitchId: string,
     txid: string,
     onSuccess: () => void,
@@ -43,8 +71,8 @@ export function usePayment() {
     try {
       await api.verifyPitch(pitchId, txid);
       onSuccess();
-    } catch (err: any) {
-      const errorMessage = err.message || 'Payment verification failed';
+    } catch (err: unknown) {
+      const errorMessage = (err as Error).message || 'Payment verification failed';
       setError(errorMessage);
       onError(errorMessage);
     } finally {
@@ -70,8 +98,8 @@ export function usePayment() {
       } else {
         onSuccess();
       }
-    } catch (err: any) {
-      const errorMessage = err.message || 'Failed to boost pitch';
+    } catch (err: unknown) {
+      const errorMessage = (err as Error).message || 'Failed to boost pitch';
       setError(errorMessage);
       onError(errorMessage);
     } finally {
@@ -79,7 +107,34 @@ export function usePayment() {
     }
   }, []);
 
-  const verifyBoost = useCallback(async (
+  const submitBoostPayment = useCallback(async (
+    pitchIdHash: string,
+    onPending: (txid: string) => void,
+    onSuccess: () => void,
+    onError: (error: string) => void
+  ) => {
+    setIsProcessing(true);
+    setError(null);
+
+    try {
+      const result: TransactionResult = await payForBoost(pitchIdHash);
+      
+      if (result.success && result.txid) {
+        onPending(result.txid);
+        onSuccess();
+      } else {
+        throw new Error('Transaction failed');
+      }
+    } catch (err: unknown) {
+      const errorMessage = (err as Error).message || 'Boost payment failed';
+      setError(errorMessage);
+      onError(errorMessage);
+    } finally {
+      setIsProcessing(false);
+    }
+  }, []);
+
+  const verifyBoostPayment = useCallback(async (
     pitchId: string,
     txid: string,
     authHeader: string,
@@ -92,8 +147,8 @@ export function usePayment() {
     try {
       await api.verifyBoost(pitchId, txid, authHeader);
       onSuccess();
-    } catch (err: any) {
-      const errorMessage = err.message || 'Boost verification failed';
+    } catch (err: unknown) {
+      const errorMessage = (err as Error).message || 'Boost verification failed';
       setError(errorMessage);
       onError(errorMessage);
     } finally {
@@ -106,8 +161,10 @@ export function usePayment() {
     error,
     clearError: () => setError(null),
     createPitchWithPayment,
-    verifyPayment,
+    submitPitchPayment,
+    verifyPitchPayment,
     boostPitchWithPayment,
-    verifyBoost,
+    submitBoostPayment,
+    verifyBoostPayment,
   };
 }
