@@ -21,5 +21,21 @@ export const verifyPitchSchema = z.object({
     .max(100, 'Invalid transaction ID'),
 });
 
+export const updatePitchSchema = z.object({
+  title: z.string()
+    .min(3, 'Title must be at least 3 characters')
+    .max(100, 'Title must be at most 100 characters')
+    .optional(),
+  description: z.string()
+    .min(10, 'Description must be at least 10 characters')
+    .max(2000, 'Description must be at most 2000 characters')
+    .optional(),
+  website: z.string()
+    .url('Invalid website URL')
+    .max(255, 'Website must be at most 255 characters')
+    .optional(),
+}).strict();
+
 export type CreatePitchInput = z.infer<typeof createPitchSchema>;
 export type VerifyPitchInput = z.infer<typeof verifyPitchSchema>;
+export type UpdatePitchInput = z.infer<typeof updatePitchSchema>;

@@ -2,7 +2,7 @@ import { Request, Response } from 'express';
 import Pitch from '../models/Pitch';
 import { X402Service } from '../services/x402.service';
 import { validateRequest } from '../middleware/error.middleware';
-import { createPitchSchema, verifyPitchSchema } from '../validators/pitch.validator';
+import { createPitchSchema, verifyPitchSchema, updatePitchSchema } from '../validators/pitch.validator';
 
 export class PitchController {
     static async createPitch(req: Request, res: Response) {
@@ -86,6 +86,59 @@ export class PitchController {
         }
     }
 
+    static async updatePitch(req: Request, res: Response) {
+        try {
+            const id = req.params.id as string;
+            const walletAddress = req.walletAddress;
+            const { title, description, website } = req.body;
+
+            const pitch = await Pitch.findById(id);
+
+            if (!pitch) {
+                return res.status(404).json({ error: 'Pitch not found' });
+            }
+
+            if (pitch.founder.toLowerCase() !== walletAddress?.toLowerCase()) {
+                return res.status(403).json({ error: 'Not authorized to update this pitch' });
+            }
+
+            if (title) pitch.title = title;
+            if (description) pitch.description = description;
+            if (website) pitch.website = website;
+
+            await pitch.save();
+
+            res.json({ message: 'Pitch updated', pitch });
+        } catch (error) {
+            console.error('Error in updatePitch:', error);
+            res.status(500).json({ error: 'Internal server error' });
+        }
+    }
+
+    static async deletePitch(req: Request, res: Response) {
+        try {
+            const id = req.params.id as string;
+            const walletAddress = req.walletAddress;
+
+            const pitch = await Pitch.findById(id);
+
+            if (!pitch) {
+                return res.status(404).json({ error: 'Pitch not found' });
+            }
+
+            if (pitch.founder.toLowerCase() !== walletAddress?.toLowerCase()) {
+                return res.status(403).json({ error: 'Not authorized to delete this pitch' });
+            }
+
+            await Pitch.deleteOne({ _id: id });
+
+            res.json({ message: 'Pitch deleted' });
+        } catch (error) {
+            console.error('Error in deletePitch:', error);
+            res.status(500).json({ error: 'Internal server error' });
+        }
+    }
+
     static async boostPitch(req: Request, res: Response) {
         try {
             const id = req.params.id as string;
@@ -155,3 +208,4 @@ export class PitchController {
 
 export const createPitchValidation = validateRequest(createPitchSchema);
 export const verifyPitchValidation = validateRequest(verifyPitchSchema);
+export const updatePitchValidation = validateRequest(updatePitchSchema);

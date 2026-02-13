@@ -3,7 +3,7 @@ import { StacksService } from '../services/stacks.service';
 
 const router = Router();
 
-router.post('/auth/nonce', async (req, res) => {
+router.post('/nonce', async (req, res) => {
     try {
         const { address } = req.body;
 
@@ -11,7 +11,7 @@ router.post('/auth/nonce', async (req, res) => {
             return res.status(400).json({ error: 'Wallet address required' });
         }
 
-        const nonce = StacksService.generateAuthNonce(address);
+        const nonce = await StacksService.generateAuthNonce(address);
         
         res.json({
             nonce,
@@ -23,17 +23,23 @@ router.post('/auth/nonce', async (req, res) => {
     }
 });
 
-router.post('/auth/verify', async (req, res) => {
+router.post('/verify', async (req, res) => {
     try {
-        const { address, signature } = req.body;
+        const { address, signature, nonce } = req.body;
 
-        if (!address || !signature) {
-            return res.status(400).json({ error: 'Address and signature required' });
+        if (!address || !signature || !nonce) {
+            return res.status(400).json({ error: 'Address, signature, and nonce required' });
+        }
+
+        const isValid = await StacksService.verifyAuthNonce(nonce, address);
+
+        if (!isValid) {
+            return res.status(401).json({ error: 'Invalid or expired nonce' });
         }
 
         res.json({
             authenticated: true,
-            address,
+            address: address.toLowerCase(),
             message: 'Wallet verified',
         });
     } catch (error) {

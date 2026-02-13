@@ -5,6 +5,7 @@ import {
     cvToJSON,
 } from '@stacks/transactions';
 import * as crypto from 'crypto';
+import AuthSession from '../models/AuthSession';
 
 const network = STACKS_TESTNET;
 
@@ -19,31 +20,43 @@ const STACKS_API_URL =
 
 export const getContractId = () => `${CONTRACT_ADDRESS}.${CONTRACT_NAME}`;
 
-const NONCE_EXPIRY = 5 * 60 * 1000;
-const nonceStore = new Map<string, { address: string; expires: number }>();
+const NONCE_EXPIRY_MINUTES = 5;
 
 export class StacksService {
     static generatePitchHash(content: string): string {
         return crypto.createHash('sha256').update(content).digest('hex');
     }
 
-    static generateAuthNonce(address: string): string {
+    static async generateAuthNonce(address: string): Promise<string> {
         const nonce = crypto.randomBytes(32).toString('hex');
-        nonceStore.set(nonce, { address, expires: Date.now() + NONCE_EXPIRY });
-        setTimeout(() => nonceStore.delete(nonce), NONCE_EXPIRY);
+        const expiresAt = new Date(Date.now() + NONCE_EXPIRY_MINUTES * 60 * 1000);
+
+        await AuthSession.create({
+            address: address.toLowerCase(),
+            nonce,
+            expiresAt,
+        });
+
         return nonce;
     }
 
-    static verifyAuthNonce(nonce: string, address: string): boolean {
-        const stored = nonceStore.get(nonce);
-        if (!stored || stored.expires < Date.now()) {
+    static async verifyAuthNonce(nonce: string, address: string): Promise<boolean> {
+        const session = await AuthSession.findOne({
+            nonce,
+            address: address.toLowerCase(),
+            expiresAt: { $gt: new Date() }
+        });
+
+        if (!session) {
             return false;
         }
-        if (stored.address.toLowerCase() !== address.toLowerCase()) {
-            return false;
-        }
-        nonceStore.delete(nonce);
+
+        await AuthSession.deleteOne({ _id: session._id });
         return true;
+    }
+
+    static async cleanupExpiredNonces(): Promise<void> {
+        await AuthSession.deleteMany({ expiresAt: { $lte: new Date() } });
     }
 
     static async getContractOwner(): Promise<string | null> {
