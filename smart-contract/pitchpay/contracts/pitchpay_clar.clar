@@ -43,6 +43,14 @@
     (map-get? pitches { pitch-id: pitch-id })
 )
 
+(define-read-only (get-pitch-fee)
+    (var-get pitch-fee)
+)
+
+(define-read-only (get-boost-fee)
+    (var-get boost-fee)
+)
+
 ;; Public functions
 (define-public (pay-for-pitch (pitch-id (buff 32)))
     (let ((fee (var-get pitch-fee)))
