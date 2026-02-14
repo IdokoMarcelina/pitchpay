@@ -1,79 +1,27 @@
 @import "tailwindcss";
-@import url('https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&family=Inter:wght@300;400;500;600;700&display=swap');
 
 @theme {
-  --color-brand-primary: #0a0f12;
-  --color-brand-secondary: #0f172a;
-  --color-brand-accent: #6366f1;
-  --color-brand-accent-light: #818cf8;
-  --color-brand-gold: #f59e0b;
-  --color-surface: rgba(255, 255, 255, 0.03);
-  --color-surface-hover: rgba(255, 255, 255, 0.08);
-  
-  --font-sans: "Outfit", "Inter", "system-ui", "sans-serif";
-  --font-display: "Outfit", "sans-serif";
-
-  --animate-float: float 6s ease-in-out infinite;
-  --animate-pulse-slow: pulse 4s cubic-bezier(0.4, 0, 0.6, 1) infinite;
-
-  @keyframes float {
-    0%, 100% { transform: translateY(0); }
-    50% { transform: translateY(-10px); }
-  }
+  --color-brand-primary: #1b4140;
+  --color-brand-accent: #d47f0d;
+  --font-sans: "Inter", "system-ui", "sans-serif";
 }
 
 @layer base {
   body {
-    @apply bg-brand-primary text-slate-200 font-sans min-h-screen selection:bg-brand-accent/30 selection:text-white;
-    background-image: 
-      radial-gradient(circle at 0% 0%, rgba(99, 102, 241, 0.15) 0%, transparent 50%),
-      radial-gradient(circle at 100% 100%, rgba(245, 158, 11, 0.1) 0%, transparent 50%);
-    background-attachment: fixed;
-  }
-
-  h1, h2, h3, h4, h5, h6 {
-    @apply font-display font-bold tracking-tight text-white;
+    @apply bg-brand-primary text-white font-sans min-h-screen;
   }
 }
 
 @layer components {
   .glass {
-    @apply bg-white/5 backdrop-blur-xl border border-white/10 shadow-[0_8px_32px_0_rgba(0,0,0,0.37)];
+    @apply bg-white/10 backdrop-blur-md border border-white/20;
   }
 
-  .glass-card {
-    @apply glass rounded-[2rem] border-white/10 transition-all duration-500;
-  }
-
-  .card-premium {
-    @apply glass-card p-8 hover:border-brand-accent/40 hover:bg-white/10 hover:-translate-y-1;
-  }
-
-  .btn-premium {
-    @apply relative overflow-hidden px-8 py-4 rounded-2xl font-bold transition-all duration-300 active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed;
-  }
-
-  .btn-premium-primary {
-    @apply btn-premium bg-brand-accent text-white shadow-[0_0_20px_rgba(99,102,241,0.4)] hover:shadow-[0_0_30px_rgba(99,102,241,0.6)] hover:bg-brand-accent-light;
-  }
-
-  .btn-premium-outline {
-    @apply btn-premium border border-white/20 bg-white/5 hover:bg-white/10 hover:border-white/40;
+  .btn-brand {
+    @apply bg-brand-accent hover:bg-brand-accent/90 text-white font-bold py-3 px-6 rounded-lg transition-all duration-300 transform hover:scale-105 active:scale-95;
   }
 
   .text-gradient {
-    @apply bg-clip-text text-transparent bg-gradient-to-br from-white via-white to-brand-accent;
-  }
-
-  .text-gradient-gold {
-    @apply bg-clip-text text-transparent bg-gradient-to-br from-white via-brand-gold to-brand-gold;
-  }
-
-  .input-premium {
-    @apply w-full bg-white/5 border border-white/10 rounded-2xl px-6 py-4 focus:outline-none focus:ring-2 focus:ring-brand-accent/50 focus:border-brand-accent/50 transition-all placeholder:text-slate-500;
-  }
-
-  .badge-premium {
-    @apply px-3 py-1 rounded-full text-xs font-bold uppercase tracking-widest border;
+    @apply bg-clip-text text-transparent bg-gradient-to-r from-white to-brand-accent;
   }
 }

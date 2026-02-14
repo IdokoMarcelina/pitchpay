@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import Navbar from '../components/Navbar';
 import Button from '../components/Button';
-import { Shield, ArrowLeft, Loader2, Twitter, Github, Linkedin, TrendingUp } from 'lucide-react';
+import { Shield, ArrowLeft, Loader2, Twitter, Github, Linkedin, TrendingUp, RefreshCw } from 'lucide-react';
 import { usePitch } from '../hooks/usePitches';
 import { useWallet } from '../context/WalletContext';
 import { api, type PaymentDetails } from '../lib/api';
@@ -10,16 +10,18 @@ import { payForInvestment, type TransactionResult } from '../lib/transactions';
 
 const PitchDetail: React.FC = () => {
     const { id } = useParams<{ id: string }>();
-    const { pitch, isLoading, error } = usePitch(id || '');
+    const { pitch, isLoading, error, refetch: refreshPitch } = usePitch(id || '');
     const { address, isConnected } = useWallet();
 
     const [showInvestModal, setShowInvestModal] = useState(false);
     const [investAmount, setInvestAmount] = useState<number>(5);
     const [isInvesting, setIsInvesting] = useState(false);
+    const [isSyncing, setIsSyncing] = useState(false);
     const [investError, setInvestError] = useState<string | null>(null);
     const [paymentDetails, setPaymentDetails] = useState<PaymentDetails | null>(null);
     const [pendingTxid, setPendingTxid] = useState<string | null>(null);
     const [investSuccess, setInvestSuccess] = useState(false);
+    const [syncMessage, setSyncMessage] = useState<string | null>(null);
 
     const handleInvest = async () => {
         if (!pitch || !isConnected) return;
@@ -46,7 +48,7 @@ const PitchDetail: React.FC = () => {
             const pitchIdHash = paymentDetails.payment_details.contract_call.args[0].replace('0x', '');
             const amount = paymentDetails.payment_details.contract_call.args[1];
 
-            const result: TransactionResult = await payForInvestment(pitchIdHash, amount, address, pitch.founder);
+            const result: TransactionResult = await payForInvestment(pitchIdHash, amount, address);
 
             if (result.success && result.txid) {
                 setPendingTxid(result.txid);
@@ -63,6 +65,26 @@ const PitchDetail: React.FC = () => {
             }
         } finally {
             setIsInvesting(false);
+        }
+    };
+
+    const handleSync = async () => {
+        if (!pitch) return;
+        setIsSyncing(true);
+        setSyncMessage(null);
+        try {
+            const data = await api.syncPitch(pitch._id);
+            if (data.updated) {
+                setSyncMessage('Status updated successfully!');
+                refreshPitch();
+            } else {
+                setSyncMessage('Status is already up to date.');
+            }
+        } catch (_err: unknown) {
+            setSyncMessage('Failed to sync with blockchain.');
+        } finally {
+            setIsSyncing(false);
+            setTimeout(() => setSyncMessage(null), 3000);
         }
     };
 
@@ -117,10 +139,10 @@ const PitchDetail: React.FC = () => {
                                     </span>
                                 )}
                                 <span className={`text-[10px] font-bold px-3 py-1 rounded-full uppercase tracking-widest border ${pitch.status === 'VERIFIED'
-                                        ? 'bg-green-500/20 text-green-400 border-green-500/20'
-                                        : pitch.status === 'PAID'
-                                            ? 'bg-yellow-500/20 text-yellow-400 border-yellow-500/20'
-                                            : 'bg-white/5 text-white/40 border-white/5'
+                                    ? 'bg-green-500/20 text-green-400 border-green-500/20'
+                                    : pitch.status === 'PAID'
+                                        ? 'bg-yellow-500/20 text-yellow-400 border-yellow-500/20'
+                                        : 'bg-white/5 text-white/40 border-white/5'
                                     }`}>
                                     {pitch.status}
                                 </span>
@@ -162,7 +184,39 @@ const PitchDetail: React.FC = () => {
 
                             <div className="space-y-4">
                                 {isOwner ? (
-                                    <p className="text-center text-white/40 text-sm">This is your pitch</p>
+                                    <div className="space-y-3">
+                                        <p className="text-center text-white/40 text-sm mb-2">This is your pitch</p>
+                                        {pitch.status !== 'VERIFIED' && (
+                                            <Button
+                                                variant="outline"
+                                                className="w-full py-3 text-xs"
+                                                onClick={handleSync}
+                                                disabled={isSyncing}
+                                            >
+                                                {isSyncing ? <RefreshCw className="animate-spin mr-2" size={14} /> : <RefreshCw className="mr-2" size={14} />}
+                                                Sync Status
+                                            </Button>
+                                        )}
+                                        {pitch.status === 'PENDING' && (
+                                            <Link to="/dashboard" className="block mt-2">
+                                                <Button variant="primary" className="w-full py-4">
+                                                    Complete Payment
+                                                </Button>
+                                            </Link>
+                                        )}
+                                        {(pitch.status === 'PAID' || pitch.status === 'VERIFIED') && !pitch.isBoosted && (
+                                            <Link to="/boost" className="block mt-2">
+                                                <Button variant="primary" className="w-full py-4 bg-orange-600 hover:bg-orange-700 border-none">
+                                                    Boost Pitch
+                                                </Button>
+                                            </Link>
+                                        )}
+                                        {syncMessage && (
+                                            <p className="text-[10px] text-center text-brand-accent animate-pulse font-bold uppercase tracking-wider mt-2">
+                                                {syncMessage}
+                                            </p>
+                                        )}
+                                    </div>
                                 ) : (
                                     <Button variant="primary" className="w-full py-4" onClick={() => setShowInvestModal(true)}>
                                         Invest Now <TrendingUp size={18} className="ml-2" />

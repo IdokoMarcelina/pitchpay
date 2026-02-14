@@ -23,8 +23,8 @@ export function usePitches({ page = 1, limit = 10, search, category, sort = 'rec
       const response = await api.getPitches(pageNum, limit, search, category, sort);
       setPitches(response.data);
       setPagination(response.pagination);
-    } catch (err: any) {
-      setError(err.message || 'Failed to fetch pitches');
+    } catch (err: unknown) {
+      setError((err as Error).message || 'Failed to fetch pitches');
     } finally {
       setIsLoading(false);
     }
@@ -57,14 +57,14 @@ export function usePitch(id: string) {
 
   const fetchPitch = useCallback(async () => {
     if (!id) return;
-    
+
     setIsLoading(true);
     setError(null);
     try {
       const data = await api.getPitch(id);
       setPitch(data);
-    } catch (err: any) {
-      setError(err.message || 'Failed to fetch pitch');
+    } catch (err: unknown) {
+      setError((err as Error).message || 'Failed to fetch pitch');
     } finally {
       setIsLoading(false);
     }

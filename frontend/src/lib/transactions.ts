@@ -64,7 +64,7 @@ export async function payForBoost(pitchIdHash: string, userAddress: string, amou
   return makeContractCall('pay-for-boost', [bufferCV(hexToBytes(pitchIdHash))], postConditions);
 }
 
-export async function payForInvestment(pitchIdHash: string, amount: string, userAddress: string, _recipientAddress: string): Promise<TransactionResult> {
+export async function payForInvestment(pitchIdHash: string, amount: string, userAddress: string): Promise<TransactionResult> {
   const amountInt = parseInt(amount);
   const postConditions = [
     Pc.principal(userAddress).willSendEq(amountInt).ustx()

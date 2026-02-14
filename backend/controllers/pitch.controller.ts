@@ -49,20 +49,20 @@ export class PitchController {
             const page = Math.max(1, parseInt(req.query.page as string) || 1);
             const limit = Math.min(50, Math.max(1, parseInt(req.query.limit as string) || 10));
             const skip = (page - 1) * limit;
-            
+
             const search = req.query.search as string;
             const category = req.query.category as string;
             const sort = req.query.sort as string || 'recent';
 
             const query: any = { status: { $in: ['PAID', 'VERIFIED'] } };
-            
+
             if (search) {
                 query.$or = [
                     { title: { $regex: search, $options: 'i' } },
                     { description: { $regex: search, $options: 'i' } }
                 ];
             }
-            
+
             if (category && category !== 'All') {
                 query.category = category;
             }
@@ -224,7 +224,12 @@ export class PitchController {
             if (!result.synced) {
                 res.status(400).json({ error: 'Sync failed', reason: result.reason });
             } else {
-                res.json({ message: 'Synced with on-chain data', onChainData: result.onChainData });
+                res.json({
+                    message: 'Synced with on-chain data',
+                    onChainData: result.onChainData,
+                    updated: result.updated,
+                    newStatus: result.newStatus
+                });
             }
         } catch (error) {
             console.error('Error in syncPitch:', error);
@@ -290,7 +295,7 @@ export class PitchController {
 
             const lowerAddress = address.toLowerCase();
 
-            const pitches = await Pitch.find({ 
+            const pitches = await Pitch.find({
                 founder: lowerAddress,
                 status: { $in: ['PAID', 'VERIFIED'] }
             });
@@ -309,7 +314,7 @@ export class PitchController {
                 return sum + (pitch.investments?.reduce((s, i) => s + i.amount, 0) || 0);
             }, 0);
 
-            const notifications = pitches.flatMap(p => 
+            const notifications = pitches.flatMap(p =>
                 (p.notifications || []).map(n => ({
                     ...n,
                     pitchTitle: p.title
@@ -345,8 +350,8 @@ export class PitchController {
             const lowerAddress = address.toLowerCase();
 
             const pitches = await Pitch.find({ founder: lowerAddress });
-            
-            const notifications = pitches.flatMap(p => 
+
+            const notifications = pitches.flatMap(p =>
                 (p.notifications || []).map(n => ({
                     ...n,
                     pitchTitle: p.title
@@ -370,13 +375,13 @@ export class PitchController {
             }
 
             const pitch = await Pitch.findOne({ _id: pitchId, founder: address.toLowerCase() });
-            
+
             if (!pitch) {
                 return res.status(404).json({ error: 'Pitch not found' });
             }
 
             const notification = pitch.notifications?.find(n => n._id.toString() === notificationId);
-            
+
             if (notification) {
                 notification.read = true;
                 await pitch.save();

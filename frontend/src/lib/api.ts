@@ -55,7 +55,7 @@ export interface PaymentDetails {
 
 class ApiError extends Error {
   status: number;
-  
+
   constructor(message: string, status: number) {
     super(message);
     this.status = status;
@@ -68,7 +68,7 @@ async function fetchApi<T>(
   options: RequestInit = {}
 ): Promise<T> {
   const url = `${API_CONFIG.baseUrl}${endpoint}`;
-  
+
   const config: RequestInit = {
     ...options,
     headers: {
@@ -94,68 +94,68 @@ async function fetchApi<T>(
 
 export const api = {
   // Pitches
-  getPitches: (page = 1, limit = 10, search?: string, category?: string, sort?: string) => 
+  getPitches: (page = 1, limit = 10, search?: string, category?: string, sort?: string) =>
     fetchApi<PaginatedResponse<Pitch>>(`/pitches?page=${page}&limit=${limit}${search ? `&search=${encodeURIComponent(search)}` : ''}${category ? `&category=${encodeURIComponent(category)}` : ''}${sort ? `&sort=${sort}` : ''}`),
-  
-  getPitch: (id: string) => 
+
+  getPitch: (id: string) =>
     fetchApi<Pitch>(`/pitches/${id}`),
-  
-  createPitch: (data: { title: string; description: string; website: string; founder: string }, authHeader?: string) => 
+
+  createPitch: (data: { title: string; description: string; website: string; founder: string }, authHeader?: string) =>
     fetchApi<Pitch | PaymentDetails>('/pitches', {
       method: 'POST',
       body: JSON.stringify(data),
       headers: authHeader ? { Authorization: `Bearer ${authHeader}` } : {},
     }),
-  
-  updatePitch: (id: string, data: Partial<Pitch>, authHeader: string) => 
+
+  updatePitch: (id: string, data: Partial<Pitch>, authHeader: string) =>
     fetchApi<Pitch>(`/pitches/${id}`, {
       method: 'PATCH',
       body: JSON.stringify(data),
       headers: { Authorization: `Bearer ${authHeader}` },
     }),
-  
-  deletePitch: (id: string, authHeader: string) => 
+
+  deletePitch: (id: string, authHeader: string) =>
     fetchApi<{ message: string }>(`/pitches/${id}`, {
       method: 'DELETE',
       headers: { Authorization: `Bearer ${authHeader}` },
     }),
-  
+
   // Payment verification
-  verifyPitch: (id: string, txid: string) => 
+  verifyPitch: (id: string, txid: string) =>
     fetchApi<{ message: string; pitch: Pitch }>(`/pitches/${id}/verify`, {
       method: 'POST',
       body: JSON.stringify({ txid }),
     }),
-  
+
   // Boost
-  boostPitch: (id: string, authHeader: string) => 
+  boostPitch: (id: string, authHeader: string) =>
     fetchApi<PaymentDetails>(`/pitches/${id}/boost`, {
       method: 'POST',
       headers: { Authorization: `Bearer ${authHeader}` },
     }),
-  
-  verifyBoost: (id: string, txid: string, authHeader: string) => 
+
+  verifyBoost: (id: string, txid: string, authHeader: string) =>
     fetchApi<{ message: string; pitch: Pitch }>(`/pitches/${id}/verify-boost`, {
       method: 'POST',
       body: JSON.stringify({ txid }),
       headers: { Authorization: `Bearer ${authHeader}` },
     }),
-  
+
   // Invest
-  investPitch: (id: string, amount?: number) => 
+  investPitch: (id: string, amount?: number) =>
     fetchApi<PaymentDetails>(`/pitches/${id}/invest`, {
       method: 'POST',
       body: JSON.stringify({ amount }),
     }),
-  
-  verifyInvestment: (id: string, txid: string, investor: string, amount: number) => 
+
+  verifyInvestment: (id: string, txid: string, investor: string, amount: number) =>
     fetchApi<{ message: string }>(`/pitches/${id}/verify-investment`, {
       method: 'POST',
       body: JSON.stringify({ txid, investor, amount }),
     }),
-  
+
   // User Profile
-  getUserProfile: (address: string) => 
+  getUserProfile: (address: string) =>
     fetchApi<{
       address: string;
       pitches: Pitch[];
@@ -168,25 +168,25 @@ export const api = {
       };
       notifications: any[];
     }>(`/users/${address}`),
-  
+
   // Notifications
-  getNotifications: (address: string) => 
+  getNotifications: (address: string) =>
     fetchApi<{ notifications: any[] }>(`/users/${address}/notifications`),
-  
+
   // Sync
-  syncPitch: (id: string) => 
-    fetchApi<{ message: string }>(`/pitches/${id}/sync`, {
+  syncPitch: (id: string) =>
+    fetchApi<{ message: string; updated?: boolean; newStatus?: string }>(`/pitches/${id}/sync`, {
       method: 'POST',
     }),
-  
+
   // Auth
-  getNonce: (address: string) => 
+  getNonce: (address: string) =>
     fetchApi<{ nonce: string; message: string }>('/auth/nonce', {
       method: 'POST',
       body: JSON.stringify({ address }),
     }),
-  
-  verifyAuth: (address: string, signature: string, nonce: string) => 
+
+  verifyAuth: (address: string, signature: string, nonce: string) =>
     fetchApi<{ authenticated: boolean; address: string }>('/auth/verify', {
       method: 'POST',
       body: JSON.stringify({ address, signature, nonce }),

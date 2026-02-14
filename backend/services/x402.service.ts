@@ -101,18 +101,22 @@ export class X402Service {
                 return null;
             }
 
-            if (pitch) {
-                const onChainData = await StacksService.getPitchOnChain(pitch.pitchIdHash);
+            const onChainData = await StacksService.getPitchOnChain(pitch.pitchIdHash);
 
-                if (onChainData && onChainData.founder === pitch.founder) {
-                    pitch.status = 'VERIFIED';
-                } else {
-                    pitch.status = 'PAID';
-                }
-                pitch.txid = txid;
-                await pitch.save();
+            if (onChainData && onChainData.founder === pitch.founder) {
+                pitch.status = 'VERIFIED';
+            } else if (tx.tx_status === 'success') {
+                // Transaction succeeded but record not yet on-chain (indexing lag)
+                pitch.status = 'PAID';
+            } else {
+                // Transaction is pending, don't update status to PAID yet
+                // But return the pitch so the frontend knows verification is in progress
                 return pitch;
             }
+
+            pitch.txid = txid;
+            await pitch.save();
+            return pitch;
         }
 
         return null;
@@ -147,8 +151,9 @@ export class X402Service {
                 if (onChainData && onChainData['is-boosted']) {
                     pitch.isBoosted = true;
                     await pitch.save();
-                    return pitch;
                 }
+                // Return pitch even if indexing is not complete, as long as tx is pending/success
+                return pitch;
             }
         }
 
@@ -162,6 +167,17 @@ export class X402Service {
         const onChainData = await StacksService.getPitchOnChain(pitch.pitchIdHash);
 
         if (!onChainData) {
+            // If not on-chain, check if the transaction failed
+            if (pitch.txid) {
+                const tx = (await StacksService.verifyTransaction(pitch.txid)) as any;
+                if (tx && (tx.tx_status === 'abort_by_post_condition' || tx.tx_status === 'abort_by_response' || tx.tx_status === 'failed')) {
+                    logger.warn('Initial transaction failed, resetting pitch status', { pitchId, txid: pitch.txid, status: tx.tx_status });
+                    pitch.status = 'PENDING';
+                    pitch.txid = undefined;
+                    await pitch.save();
+                    return { synced: true, updated: true, newStatus: 'PENDING', reason: 'transaction_failed' };
+                }
+            }
             return { synced: false, reason: 'not_on_chain' };
         }
 
@@ -176,7 +192,7 @@ export class X402Service {
             updated = true;
         }
 
-        if (pitch.status === 'PENDING') {
+        if (pitch.status === 'PENDING' || pitch.status === 'PAID') {
             pitch.status = 'VERIFIED';
             updated = true;
         }
@@ -185,7 +201,7 @@ export class X402Service {
             await pitch.save();
         }
 
-        return { synced: true, onChainData };
+        return { synced: true, updated, onChainData };
     }
 
     static async getBoostPaymentDetails(pitchIdHash: string) {
