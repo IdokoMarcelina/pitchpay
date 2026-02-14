@@ -13,6 +13,7 @@ import AuthSession from './models/AuthSession';
 dotenv.config();
 
 const app = express();
+app.set('trust proxy', 1);
 const PORT = process.env.PORT || 3000;
 const MONGODB_URI = process.env.MONGODB_URI || 'mongodb://localhost:27017/pitchpay';
 
@@ -29,7 +30,7 @@ app.use(helmet({
 }));
 
 const corsOptions = {
-    origin: process.env.CORS_ORIGIN?.split(',') || ['http://localhost:5173', 'http://localhost:3000'],
+    origin: process.env.CORS_ORIGIN?.split(',').map(o => o.trim().replace(/\/$/, '')) || ['http://localhost:5173', 'http://localhost:3000'],
     credentials: true,
     optionsSuccessStatus: 200,
 };

@@ -1,10 +1,11 @@
-import React from 'react';
+import { useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import Button from '../components/Button';
 import { Rocket, Shield, Zap, ArrowRight, Globe, BarChart3 } from 'lucide-react';
 import Navbar from '../components/Navbar';
 
 const LandingPage: React.FC = () => {
+    const navigate = useNavigate();
     return (
         <div className="overflow-x-hidden">
             <Navbar />
@@ -29,10 +30,10 @@ const LandingPage: React.FC = () => {
                             The first decentralized platform where quality startups meet early-stage investors through micro-payments and on-chain verification.
                         </p>
                         <div className="flex flex-wrap gap-4">
-                            <Button variant="primary" className="text-lg px-8 py-4">
+                            <Button variant="primary" className="text-lg px-8 py-4" onClick={() => navigate('/create')}>
                                 Start Pitching <Rocket className="ml-2" size={20} />
                             </Button>
-                            <Button variant="outline" className="text-lg px-8 py-4">
+                            <Button variant="outline" className="text-lg px-8 py-4" onClick={() => navigate('/explorer')}>
                                 Explore Pitches <ArrowRight className="ml-2" size={20} />
                             </Button>
                         </div>

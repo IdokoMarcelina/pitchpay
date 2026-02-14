@@ -7,7 +7,9 @@ import PitchDetail from './pages/PitchDetail';
 import Analytics from './pages/Analytics';
 import Boost from './pages/Boost';
 import Profile from './pages/Profile';
+import ProtectedRoute from './components/ProtectedRoute';
 import { useAnalytics } from './hooks/useAnalytics';
+
 
 function AppContent() {
   useAnalytics();
@@ -16,10 +18,15 @@ function AppContent() {
       <Routes>
         <Route path="/" element={<LandingPage />} />
         <Route path="/explorer" element={<Explorer />} />
-        <Route path="/dashboard" element={<Dashboard />} />
-        <Route path="/analytics" element={<Analytics />} />
-        <Route path="/boost" element={<Boost />} />
-        <Route path="/create" element={<CreatePitch />} />
+
+        {/* Protected Routes */}
+        <Route element={<ProtectedRoute />}>
+          <Route path="/dashboard" element={<Dashboard />} />
+          <Route path="/analytics" element={<Analytics />} />
+          <Route path="/boost" element={<Boost />} />
+          <Route path="/create" element={<CreatePitch />} />
+        </Route>
+
         <Route path="/pitch/:id" element={<PitchDetail />} />
         <Route path="/profile/:address" element={<Profile />} />
         <Route path="*" element={<Navigate to="/" replace />} />

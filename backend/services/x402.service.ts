@@ -196,6 +196,10 @@ export class X402Service {
                     pitch.txid = undefined;
                     await pitch.save();
                     return { synced: true, updated: true, newStatus: 'PENDING', reason: 'transaction_failed' };
+                } else if (tx && tx.tx_status === 'pending') {
+                    return { synced: false, reason: 'transaction_pending' };
+                } else if (tx && tx.tx_status === 'success') {
+                    return { synced: false, reason: 'indexer_lagging' };
                 } else if (!tx) {
                     // Hiro 404 could mean many things, but if it's been PAID for a while and not on-chain, it's safer to allow re-sync
                     logger.warn('Transaction not found on-chain, and not in Hiro index. Resetting to PENDING for recovery.', { pitchId, txid: pitch.txid });

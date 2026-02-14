@@ -85,7 +85,9 @@ const Navbar: React.FC = () => {
                     <div className="hidden md:block">
                         <div className="ml-10 flex items-baseline space-x-8">
                             <Link to="/explorer" className="text-white/80 hover:text-white transition-colors">Explorer</Link>
-                            <Link to="/dashboard" className="text-white/80 hover:text-white transition-colors">Dashboard</Link>
+                            {isConnected && (
+                                <Link to="/dashboard" className="text-white/80 hover:text-white transition-colors">Dashboard</Link>
+                            )}
                             {isConnected && address && (
                                 <div className="relative">
                                     <button
