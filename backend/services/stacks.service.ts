@@ -16,13 +16,27 @@ const _fetch = typeof fetch !== 'undefined' ? fetch : require('node-fetch');
 const network = STACKS_TESTNET;
 
 const CONTRACT_ADDRESS =
-    process.env.CONTRACT_ADDRESS ||
-    'ST1Z0AQZHXW508XB03EWKH6KK90A0T084DTD8DPTG';
+    (process.env.CONTRACT_ADDRESS ||
+        'ST1Z0AQZHXW508XB03EWKH6KK90A0T084DTD8DPTG').trim();
 
-const CONTRACT_NAME = 'pitchpay_clar';
+const CONTRACT_NAME = (process.env.CONTRACT_NAME || 'pitchpay_clar_v1').trim();
 
 const STACKS_API_URL =
-    process.env.STACKS_API_URL || 'https://api.testnet.hiro.so';
+    (process.env.STACKS_API_URL || 'https://api.testnet.hiro.so').trim();
+
+logger.info('Stacks Service Configuration Initialized', {
+    CONTRACT_ADDRESS,
+    CONTRACT_NAME,
+    STACKS_API_URL,
+    RAW_ENV: process.env.CONTRACT_ADDRESS
+});
+
+logger.info('Stacks Configuration:', {
+    CONTRACT_ADDRESS,
+    CONTRACT_NAME,
+    STACKS_API_URL,
+    env_contract: process.env.CONTRACT_ADDRESS
+});
 
 export const getContractId = () => `${CONTRACT_ADDRESS}.${CONTRACT_NAME}`;
 
@@ -32,7 +46,7 @@ const flattenCV = (cvJson: any): any => {
     if (!cvJson) return null;
 
     // Handle null values and 'none' results
-    if (cvJson.value === null || cvJson.type === 'none' || (cvJson.type && cvJson.type.startsWith('(optional none)'))) {
+    if (cvJson.value === null || cvJson.type === 'none' || (cvJson.type && (cvJson.type === 'none' || cvJson.type.includes('none')))) {
         return null;
     }
 
@@ -40,27 +54,33 @@ const flattenCV = (cvJson: any): any => {
 
     // If it's a wrapper (response, optional, some, etc.), recurse into .value
     // A wrapper CV JSON has a .value which is itself a CV JSON object (has a .type)
-    if (cvJson.value && typeof cvJson.value === 'object' && cvJson.value.type) {
-        return flattenCV(cvJson.value);
+    if (cvJson.value && typeof cvJson.value === 'object' && (cvJson.value.type || cvJson.value.value !== undefined)) {
+        // Handle cases where .value is the unwrapped content or another CV object
+        if (cvJson.value.type) {
+            return flattenCV(cvJson.value);
+        }
+        // If it's a primitive value inside the wrapper but type info is on parent
+        // continue to normal processing
     }
 
     // Handle tuples: they have keys and nested CV JSON objects
-    if (type.startsWith('(tuple') || type === 'tuple') {
+    if (type.startsWith('(tuple') || type === 'tuple' || (cvJson.value && !cvJson.value.type && typeof cvJson.value === 'object')) {
         const result: any = {};
-        if (cvJson.value && typeof cvJson.value === 'object') {
-            for (const [key, val] of Object.entries(cvJson.value)) {
+        const entries = cvJson.value && typeof cvJson.value === 'object' ? Object.entries(cvJson.value) : [];
+        if (entries.length > 0) {
+            for (const [key, val] of entries) {
                 result[key] = flattenCV(val);
             }
+            return result;
         }
-        return result;
     }
 
     // Handle primitives
-    if (type === 'uint' || type === 'int') return parseInt(cvJson.value);
-    if (type === 'bool') return cvJson.value === true || cvJson.value === 'true';
-    if (type === 'principal' || type === 'buff') return cvJson.value;
+    if (type === 'uint' || type === 'int' || type.includes('uint') || type.includes('int')) return parseInt(cvJson.value);
+    if (type === 'bool' || type.includes('bool')) return cvJson.value === true || cvJson.value === 'true';
+    if (type === 'principal' || type === 'buff' || type.includes('principal') || type.includes('buff')) return cvJson.value;
 
-    return cvJson.value;
+    return cvJson.value !== undefined ? cvJson.value : cvJson;
 };
 
 export class StacksService {
