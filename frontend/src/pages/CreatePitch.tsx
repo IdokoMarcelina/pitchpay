@@ -82,8 +82,11 @@ const CreatePitch: React.FC = () => {
         setError(null);
 
         try {
+            if (!address || !paymentDetails) return;
             await submitPitchPayment(
                 pitchIdHash,
+                address,
+                paymentDetails.payment_details.amount,
                 () => { },
                 (txId) => {
                     setPaymentStep('verifying');

@@ -1,5 +1,7 @@
 import { openContractCall } from '@stacks/connect';
 import {
+  PostConditionMode,
+  Pc,
   bufferCV,
   uintCV,
 } from '@stacks/transactions';
@@ -23,7 +25,8 @@ function hexToBytes(hex: string): Uint8Array {
 
 export async function makeContractCall(
   functionName: string,
-  functionArgs: any[]
+  functionArgs: any[],
+  postConditions: any[] = []
 ): Promise<TransactionResult> {
   return new Promise((resolve, reject) => {
     openContractCall({
@@ -31,6 +34,8 @@ export async function makeContractCall(
       contractName: CONTRACT_NAME,
       functionName,
       functionArgs,
+      postConditions,
+      postConditionMode: PostConditionMode.Deny,
       network: 'testnet',
       onFinish: (data) => {
         resolve({
@@ -45,19 +50,29 @@ export async function makeContractCall(
   });
 }
 
-export async function payForPitch(pitchIdHash: string): Promise<TransactionResult> {
-  return makeContractCall('pay-for-pitch', [bufferCV(hexToBytes(pitchIdHash))]);
+export async function payForPitch(pitchIdHash: string, userAddress: string, amount: number): Promise<TransactionResult> {
+  const postConditions = [
+    Pc.principal(userAddress).willSendEq(amount).ustx()
+  ];
+  return makeContractCall('pay-for-pitch', [bufferCV(hexToBytes(pitchIdHash))], postConditions);
 }
 
-export async function payForBoost(pitchIdHash: string): Promise<TransactionResult> {
-  return makeContractCall('pay-for-boost', [bufferCV(hexToBytes(pitchIdHash))]);
+export async function payForBoost(pitchIdHash: string, userAddress: string, amount: number): Promise<TransactionResult> {
+  const postConditions = [
+    Pc.principal(userAddress).willSendEq(amount).ustx()
+  ];
+  return makeContractCall('pay-for-boost', [bufferCV(hexToBytes(pitchIdHash))], postConditions);
 }
 
-export async function payForInvestment(pitchIdHash: string, amount: string): Promise<TransactionResult> {
+export async function payForInvestment(pitchIdHash: string, amount: string, userAddress: string, _recipientAddress: string): Promise<TransactionResult> {
+  const amountInt = parseInt(amount);
+  const postConditions = [
+    Pc.principal(userAddress).willSendEq(amountInt).ustx()
+  ];
   return makeContractCall('invest-in-pitch', [
     bufferCV(hexToBytes(pitchIdHash)),
     uintCV(amount)
-  ]);
+  ], postConditions);
 }
 
 export function getContractId(): string {

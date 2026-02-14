@@ -1,6 +1,7 @@
 import { Request, Response } from 'express';
 import { StacksService, getContractId } from './stacks.service';
 import Pitch from '../models/Pitch';
+import logger from '../middleware/logger';
 
 interface StacksTx {
     tx_status: string;
@@ -73,14 +74,36 @@ export class X402Service {
     }
 
     static async verifyPayment(pitchId: string, txid: string) {
-        const tx = (await StacksService.verifyTransaction(txid)) as StacksTx | null;
+        logger.info('Verifying payment', { pitchId, txid });
+        const tx = (await StacksService.verifyTransaction(txid)) as any;
+        logger.info('Transaction status', { txid, status: tx?.tx_status, type: tx?.tx_type });
 
-        if (tx && typeof tx.tx_status === 'string' && tx.tx_status === 'success') {
+        if (tx && (tx.tx_status === 'success' || tx.tx_status === 'pending')) {
+            // Basic validation for pending tx
+            if (tx.tx_status === 'pending') {
+                const contractId = getContractId();
+                logger.info('Validating pending tx', { contractId });
+                if (tx.tx_type !== 'contract_call' ||
+                    tx.contract_call.contract_id !== contractId ||
+                    tx.contract_call.function_name !== 'pay-for-pitch') {
+                    logger.warn('Pending validation failed', {
+                        type: tx.tx_type,
+                        target_contract: tx.contract_call?.contract_id,
+                        target_func: tx.contract_call?.function_name
+                    });
+                    return null;
+                }
+            }
+
             const pitch = await Pitch.findById(pitchId);
+            if (!pitch) {
+                logger.error('Pitch not found in database', { pitchId });
+                return null;
+            }
 
             if (pitch) {
                 const onChainData = await StacksService.getPitchOnChain(pitch.pitchIdHash);
-                
+
                 if (onChainData && onChainData.founder === pitch.founder) {
                     pitch.status = 'VERIFIED';
                 } else {
@@ -96,14 +119,31 @@ export class X402Service {
     }
 
     static async verifyBoostPayment(pitchId: string, txid: string) {
-        const tx = (await StacksService.verifyTransaction(txid)) as StacksTx | null;
+        logger.info('Verifying boost payment', { pitchId, txid });
+        const tx = (await StacksService.verifyTransaction(txid)) as any;
+        logger.info('Boost transaction status', { txid, status: tx?.tx_status, type: tx?.tx_type });
 
-        if (tx && typeof tx.tx_status === 'string' && tx.tx_status === 'success') {
+        if (tx && (tx.tx_status === 'success' || tx.tx_status === 'pending')) {
+            // Basic validation for pending tx
+            if (tx.tx_status === 'pending') {
+                const contractId = getContractId();
+                if (tx.tx_type !== 'contract_call' ||
+                    tx.contract_call.contract_id !== contractId ||
+                    tx.contract_call.function_name !== 'pay-for-boost') {
+                    logger.warn('Boost pending validation failed', {
+                        type: tx.tx_type,
+                        target_contract: tx.contract_call?.contract_id,
+                        target_func: tx.contract_call?.function_name
+                    });
+                    return null;
+                }
+            }
+
             const pitch = await Pitch.findById(pitchId);
 
             if (pitch) {
                 const onChainData = await StacksService.getPitchOnChain(pitch.pitchIdHash);
-                
+
                 if (onChainData && onChainData['is-boosted']) {
                     pitch.isBoosted = true;
                     await pitch.save();
@@ -120,7 +160,7 @@ export class X402Service {
         if (!pitch) return null;
 
         const onChainData = await StacksService.getPitchOnChain(pitch.pitchIdHash);
-        
+
         if (!onChainData) {
             return { synced: false, reason: 'not_on_chain' };
         }
@@ -150,7 +190,7 @@ export class X402Service {
 
     static async getBoostPaymentDetails(pitchIdHash: string) {
         const { boostFee } = await getCachedFees();
-        
+
         return {
             status: 402,
             message: 'Boost Payment Required: Send 10 STX to boost your pitch',
@@ -169,7 +209,7 @@ export class X402Service {
     static async getInvestmentPaymentDetails(pitchIdHash: string, amountMicroSTX: number | null) {
         const { pitchFee } = await getCachedFees();
         const amount = amountMicroSTX || pitchFee;
-        
+
         return {
             status: 402,
             message: `Investment Required: Send ${(amount / 1000000).toFixed(2)} STX to support this startup`,
@@ -186,9 +226,26 @@ export class X402Service {
     }
 
     static async verifyInvestmentPayment(pitchId: string, txid: string, investor?: string, amount?: number) {
-        const tx = (await StacksService.verifyTransaction(txid)) as StacksTx | null;
+        logger.info('Verifying investment payment', { pitchId, txid, investor, amount });
+        const tx = (await StacksService.verifyTransaction(txid)) as any;
+        logger.info('Investment transaction status', { txid, status: tx?.tx_status, type: tx?.tx_type });
 
-        if (tx && typeof tx.tx_status === 'string' && tx.tx_status === 'success') {
+        if (tx && (tx.tx_status === 'success' || tx.tx_status === 'pending')) {
+            // Basic validation for pending tx
+            if (tx.tx_status === 'pending') {
+                const contractId = getContractId();
+                if (tx.tx_type !== 'contract_call' ||
+                    tx.contract_call.contract_id !== contractId ||
+                    tx.contract_call.function_name !== 'invest-in-pitch') {
+                    logger.warn('Investment pending validation failed', {
+                        type: tx.tx_type,
+                        target_contract: tx.contract_call?.contract_id,
+                        target_func: tx.contract_call?.function_name
+                    });
+                    return null;
+                }
+            }
+
             if (investor && amount) {
                 const pitch = await Pitch.findById(pitchId);
                 if (pitch) {
@@ -198,7 +255,7 @@ export class X402Service {
                         txid,
                         createdAt: new Date()
                     } as any);
-                    
+
                     pitch.notifications.push({
                         type: 'investment',
                         from: investor.toLowerCase(),
@@ -209,7 +266,7 @@ export class X402Service {
                         read: false,
                         createdAt: new Date()
                     } as any);
-                    
+
                     await pitch.save();
                 }
             }

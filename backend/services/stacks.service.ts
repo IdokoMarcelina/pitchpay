@@ -6,6 +6,7 @@ import {
 } from '@stacks/transactions';
 import * as crypto from 'crypto';
 import AuthSession from '../models/AuthSession';
+import logger from '../middleware/logger';
 
 const network = STACKS_TESTNET;
 
@@ -103,10 +104,11 @@ export class StacksService {
 
             if (!response.ok) return null;
 
-            const tx = await response.json();
+            const tx: any = await response.json();
+            logger.info(`Hiro API response for ${txid}`, { tx });
             return tx;
         } catch (error) {
-            console.error('Error verifying transaction:', error);
+            logger.error('Error verifying transaction', { error: String(error), txid });
             return null;
         }
     }

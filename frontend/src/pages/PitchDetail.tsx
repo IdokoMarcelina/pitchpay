@@ -12,7 +12,7 @@ const PitchDetail: React.FC = () => {
     const { id } = useParams<{ id: string }>();
     const { pitch, isLoading, error } = usePitch(id || '');
     const { address, isConnected } = useWallet();
-    
+
     const [showInvestModal, setShowInvestModal] = useState(false);
     const [investAmount, setInvestAmount] = useState<number>(5);
     const [isInvesting, setIsInvesting] = useState(false);
@@ -23,10 +23,10 @@ const PitchDetail: React.FC = () => {
 
     const handleInvest = async () => {
         if (!pitch || !isConnected) return;
-        
+
         setIsInvesting(true);
         setInvestError(null);
-        
+
         try {
             const details = await api.investPitch(pitch._id, investAmount);
             setPaymentDetails(details);
@@ -38,19 +38,19 @@ const PitchDetail: React.FC = () => {
 
     const handleSubmitInvestment = async () => {
         if (!paymentDetails?.payment_details.contract_call?.args?.[0] || !pitch || !address) return;
-        
+
         setIsInvesting(true);
         setInvestError(null);
-        
+
         try {
             const pitchIdHash = paymentDetails.payment_details.contract_call.args[0].replace('0x', '');
             const amount = paymentDetails.payment_details.contract_call.args[1];
-            
-            const result: TransactionResult = await payForInvestment(pitchIdHash, amount);
-            
+
+            const result: TransactionResult = await payForInvestment(pitchIdHash, amount, address, pitch.founder);
+
             if (result.success && result.txid) {
                 setPendingTxid(result.txid);
-                
+
                 await api.verifyInvestment(pitch._id, result.txid, address, parseInt(amount));
                 setInvestSuccess(true);
             } else {
@@ -116,13 +116,12 @@ const PitchDetail: React.FC = () => {
                                         Featured
                                     </span>
                                 )}
-                                <span className={`text-[10px] font-bold px-3 py-1 rounded-full uppercase tracking-widest border ${
-                                    pitch.status === 'VERIFIED' 
+                                <span className={`text-[10px] font-bold px-3 py-1 rounded-full uppercase tracking-widest border ${pitch.status === 'VERIFIED'
                                         ? 'bg-green-500/20 text-green-400 border-green-500/20'
                                         : pitch.status === 'PAID'
-                                        ? 'bg-yellow-500/20 text-yellow-400 border-yellow-500/20'
-                                        : 'bg-white/5 text-white/40 border-white/5'
-                                }`}>
+                                            ? 'bg-yellow-500/20 text-yellow-400 border-yellow-500/20'
+                                            : 'bg-white/5 text-white/40 border-white/5'
+                                    }`}>
                                     {pitch.status}
                                 </span>
                             </div>
@@ -169,10 +168,10 @@ const PitchDetail: React.FC = () => {
                                         Invest Now <TrendingUp size={18} className="ml-2" />
                                     </Button>
                                 )}
-                                <a 
-                                    href={pitch.website} 
-                                    target="_blank" 
-                                    rel="noopener noreferrer" 
+                                <a
+                                    href={pitch.website}
+                                    target="_blank"
+                                    rel="noopener noreferrer"
                                     className="block text-center text-sm font-medium text-white/60 hover:text-white underline transition-colors"
                                 >
                                     Visit Website
@@ -195,7 +194,7 @@ const PitchDetail: React.FC = () => {
                 <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
                     <div className="glass rounded-3xl p-8 max-w-md w-full">
                         <h3 className="font-bold text-2xl mb-6">Invest in {pitch.title}</h3>
-                        
+
                         {investSuccess ? (
                             <div className="text-center py-8">
                                 <div className="w-16 h-16 bg-green-500/20 rounded-full flex items-center justify-center mx-auto mb-4">
@@ -215,7 +214,7 @@ const PitchDetail: React.FC = () => {
                                         {(paymentDetails.payment_details.amount / 1000000).toFixed(2)} STX
                                     </p>
                                 </div>
-                                
+
                                 {pendingTxid && (
                                     <div className="p-4 bg-yellow-500/10 rounded-xl border border-yellow-500/30">
                                         <p className="text-yellow-400 text-sm">Transaction pending...</p>

@@ -34,6 +34,8 @@ export function usePayment() {
 
   const submitPitchPayment = useCallback(async (
     pitchIdHash: string,
+    userAddress: string,
+    amount: number,
     onPending: (txid: string) => void,
     onSuccess: (txid: string) => void,
     onError: (error: string) => void
@@ -42,7 +44,7 @@ export function usePayment() {
     setError(null);
 
     try {
-      const result: TransactionResult = await payForPitch(pitchIdHash);
+      const result: TransactionResult = await payForPitch(pitchIdHash, userAddress, amount);
 
       if (result.success && result.txid) {
         onPending(result.txid);
@@ -109,6 +111,8 @@ export function usePayment() {
 
   const submitBoostPayment = useCallback(async (
     pitchIdHash: string,
+    userAddress: string,
+    amount: number,
     onPending: (txid: string) => void,
     onSuccess: (txid: string) => void,
     onError: (error: string) => void
@@ -117,7 +121,7 @@ export function usePayment() {
     setError(null);
 
     try {
-      const result: TransactionResult = await payForBoost(pitchIdHash);
+      const result: TransactionResult = await payForBoost(pitchIdHash, userAddress, amount);
 
       if (result.success && result.txid) {
         onPending(result.txid);

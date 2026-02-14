@@ -10,39 +10,66 @@ export interface Logger {
 
 const getTimestamp = () => new Date().toISOString();
 
+import fs from 'fs';
+import path from 'path';
+
+const LOG_DIR = path.join(process.cwd(), 'logs');
+if (!fs.existsSync(LOG_DIR)) {
+    fs.mkdirSync(LOG_DIR);
+}
+const LOG_FILE = path.join(LOG_DIR, 'debug.log');
+
+const writeToFile = (level: string, message: string, meta: any) => {
+    const logEntry = JSON.stringify({
+        timestamp: getTimestamp(),
+        level,
+        message,
+        ...meta,
+    }) + '\n';
+    fs.appendFileSync(LOG_FILE, logEntry);
+};
+
 const logger: Logger = {
     info: (message: string, meta = {}) => {
-        console.log(JSON.stringify({
+        const logData = {
             timestamp: getTimestamp(),
             level: 'info',
             message,
             ...meta,
-        }));
+        };
+        console.log(JSON.stringify(logData));
+        writeToFile('info', message, meta);
     },
     warn: (message: string, meta = {}) => {
-        console.warn(JSON.stringify({
+        const logData = {
             timestamp: getTimestamp(),
             level: 'warn',
             message,
             ...meta,
-        }));
+        };
+        console.warn(JSON.stringify(logData));
+        writeToFile('warn', message, meta);
     },
     error: (message: string, meta = {}) => {
-        console.error(JSON.stringify({
+        const logData = {
             timestamp: getTimestamp(),
             level: 'error',
             message,
             ...meta,
-        }));
+        };
+        console.error(JSON.stringify(logData));
+        writeToFile('error', message, meta);
     },
     debug: (message: string, meta = {}) => {
         if (process.env.NODE_ENV === 'development') {
-            console.debug(JSON.stringify({
+            const logData = {
                 timestamp: getTimestamp(),
                 level: 'debug',
                 message,
                 ...meta,
-            }));
+            };
+            console.debug(JSON.stringify(logData));
+            writeToFile('debug', message, meta);
         }
     },
 };
