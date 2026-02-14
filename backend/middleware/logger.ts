@@ -14,19 +14,35 @@ import fs from 'fs';
 import path from 'path';
 
 const LOG_DIR = path.join(process.cwd(), 'logs');
-if (!fs.existsSync(LOG_DIR)) {
-    fs.mkdirSync(LOG_DIR);
+let fileLoggingEnabled = true;
+
+try {
+    if (!fs.existsSync(LOG_DIR)) {
+        fs.mkdirSync(LOG_DIR, { recursive: true });
+    }
+} catch (err) {
+    console.warn('File logging disabled: Could not create logs directory', err);
+    fileLoggingEnabled = false;
 }
+
 const LOG_FILE = path.join(LOG_DIR, 'debug.log');
 
 const writeToFile = (level: string, message: string, meta: any) => {
-    const logEntry = JSON.stringify({
-        timestamp: getTimestamp(),
-        level,
-        message,
-        ...meta,
-    }) + '\n';
-    fs.appendFileSync(LOG_FILE, logEntry);
+    if (!fileLoggingEnabled) return;
+
+    try {
+        const logEntry = JSON.stringify({
+            timestamp: getTimestamp(),
+            level,
+            message,
+            ...meta,
+        }) + '\n';
+        fs.appendFileSync(LOG_FILE, logEntry);
+    } catch (err) {
+        // Fallback: stop trying to write to file if it fails once
+        fileLoggingEnabled = false;
+        console.error('File logging failed, disabling:', err);
+    }
 };
 
 const logger: Logger = {
