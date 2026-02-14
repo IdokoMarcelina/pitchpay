@@ -222,7 +222,7 @@ export class X402Service {
 
         let updated = false;
 
-        if (onChainData.founder.toLowerCase() !== pitch.founder.toLowerCase()) {
+        if (!onChainData.founder || onChainData.founder.toLowerCase() !== pitch.founder.toLowerCase()) {
             return { synced: false, reason: 'founder_mismatch' };
         }
 

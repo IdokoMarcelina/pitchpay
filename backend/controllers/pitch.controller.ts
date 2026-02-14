@@ -346,12 +346,15 @@ export class PitchController {
             });
 
             const totalInvested = investedPitches.reduce((sum, pitch) => {
-                const userInvestments = pitch.investments?.filter(i => i.investor.toLowerCase() === lowerAddress) || [];
-                return sum + userInvestments.reduce((s, i) => s + i.amount, 0);
+                const userInvestments = pitch.investments?.filter(i =>
+                    i.investor && i.investor.toLowerCase() === lowerAddress
+                ) || [];
+                return sum + userInvestments.reduce((s, i) => s + (i.amount || 0), 0);
             }, 0);
 
             const totalRaised = pitches.reduce((sum, pitch) => {
-                return sum + (pitch.investments?.reduce((s, i) => s + i.amount, 0) || 0);
+                const pitchInvestments = pitch.investments || [];
+                return sum + pitchInvestments.reduce((s, i) => s + (i.amount || 0), 0);
             }, 0);
 
             const rewardBalance = await StacksService.getRewardBalance(address).catch(() => 0) || 0;

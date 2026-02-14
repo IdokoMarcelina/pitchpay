@@ -7,6 +7,8 @@ export class AIController {
     static async getAgent(req: Request, res: Response) {
         try {
             const address = req.params.address as string;
+            if (!address) return res.status(400).json({ error: 'Address required' });
+
             const agent = await Agent.findOne({ userAddress: address.toLowerCase() });
             res.json(agent || { isActive: false, strategy: '' });
         } catch (error) {
@@ -18,6 +20,8 @@ export class AIController {
     static async updateAgent(req: Request, res: Response) {
         try {
             const address = req.params.address as string;
+            if (!address) return res.status(400).json({ error: 'Address required' });
+
             const { strategy, isActive } = req.body;
 
             const agent = await Agent.findOneAndUpdate(
