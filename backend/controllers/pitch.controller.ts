@@ -334,15 +334,16 @@ export class PitchController {
                 return res.status(400).json({ error: 'Address required' });
             }
 
+            const addressRegex = new RegExp(`^${address}$`, 'i');
             const lowerAddress = address.toLowerCase();
 
             const pitches = await Pitch.find({
-                founder: lowerAddress,
-                status: { $in: ['PAID', 'VERIFIED'] }
+                founder: addressRegex,
+                status: { $in: ['PAID', 'VERIFIED', 'PENDING'] }
             });
 
             const investedPitches = await Pitch.find({
-                'investments.investor': lowerAddress,
+                'investments.investor': addressRegex,
                 status: { $in: ['PAID', 'VERIFIED'] }
             });
 
@@ -391,15 +392,16 @@ export class PitchController {
     static async getNotifications(req: Request, res: Response) {
         try {
             const address = req.params.address as string;
+            if (!address) return res.status(400).json({ error: 'Address required' });
 
-            if (!address) {
-                return res.status(400).json({ error: 'Address required' });
-            }
+            const addressRegex = new RegExp(`^${address}$`, 'i');
 
-            const lowerAddress = address.toLowerCase();
-
-            const pitches = await Pitch.find({ founder: lowerAddress });
-
+            const pitches = await Pitch.find({
+                $or: [
+                    { founder: addressRegex },
+                    { 'notifications.from': addressRegex }
+                ]
+            });
             const notifications = pitches.flatMap(p =>
                 (p.notifications || []).map(n => ({
                     ...n,

@@ -31,22 +31,21 @@ const NONCE_EXPIRY_MINUTES = 5;
 const flattenCV = (cvJson: any): any => {
     if (!cvJson) return null;
 
-    // Handle wrapped types: responses (ok/err) and optionals (some)
-    if (cvJson.type && (
-        cvJson.type.startsWith('(ok ') ||
-        cvJson.type.startsWith('(err ') ||
-        cvJson.type === 'some'
-    )) {
+    // Handle null values and 'none' results
+    if (cvJson.value === null || cvJson.type === 'none' || (cvJson.type && cvJson.type.startsWith('(optional none)'))) {
+        return null;
+    }
+
+    const type = cvJson.type || '';
+
+    // If it's a wrapper (response, optional, some, etc.), recurse into .value
+    // A wrapper CV JSON has a .value which is itself a CV JSON object (has a .type)
+    if (cvJson.value && typeof cvJson.value === 'object' && cvJson.value.type) {
         return flattenCV(cvJson.value);
     }
 
-    if (cvJson.type === 'none') return null;
-
-    if (cvJson.type === 'uint' || cvJson.type === 'int') return parseInt(cvJson.value);
-    if (cvJson.type === 'bool') return cvJson.value;
-    if (cvJson.type === 'principal' || cvJson.type === 'buff') return cvJson.value;
-
-    if (cvJson.type && cvJson.type.startsWith('(tuple')) {
+    // Handle tuples: they have keys and nested CV JSON objects
+    if (type.startsWith('(tuple') || type === 'tuple') {
         const result: any = {};
         if (cvJson.value && typeof cvJson.value === 'object') {
             for (const [key, val] of Object.entries(cvJson.value)) {
@@ -55,6 +54,11 @@ const flattenCV = (cvJson: any): any => {
         }
         return result;
     }
+
+    // Handle primitives
+    if (type === 'uint' || type === 'int') return parseInt(cvJson.value);
+    if (type === 'bool') return cvJson.value === true || cvJson.value === 'true';
+    if (type === 'principal' || type === 'buff') return cvJson.value;
 
     return cvJson.value;
 };
@@ -116,6 +120,7 @@ export class StacksService {
 
     static async getPitchOnChain(pitchIdHash: string) {
         try {
+            logger.info('Calling read-only get-pitch', { pitchIdHash });
             const result = await fetchCallReadOnlyFunction({
                 contractAddress: CONTRACT_ADDRESS,
                 contractName: CONTRACT_NAME,
@@ -125,10 +130,17 @@ export class StacksService {
                 senderAddress: CONTRACT_ADDRESS,
             });
             const json = cvToJSON(result);
-            if (!json.value) return null;
-            return flattenCV(json.value);
+            logger.debug('Read-only get-pitch result', { json });
+
+            // Unpack from response/optional
+            const flattened = flattenCV(json);
+            if (!flattened) {
+                logger.warn('Pitch not found on-chain (result flattened to null)', { pitchIdHash });
+                return null;
+            }
+            return flattened;
         } catch (error) {
-            console.error('Error calling read-only function:', error);
+            logger.error('Error calling read-only get-pitch:', error);
             return null;
         }
     }
