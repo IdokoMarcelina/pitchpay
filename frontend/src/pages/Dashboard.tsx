@@ -2,17 +2,22 @@ import React, { useState } from 'react';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
 import Navbar from '../components/Navbar';
 import Button from '../components/Button';
-import { Plus, LayoutDashboard, Wallet, BarChart2, PlusCircle, Rocket, Loader2, TrendingUp } from 'lucide-react';
+import { Plus, LayoutDashboard, Wallet, BarChart2, PlusCircle, Rocket, Loader2, TrendingUp, Shield } from 'lucide-react';
 import PitchCard from '../components/PitchCard';
 import { useWallet } from '../context/WalletContext';
 import { usePitches } from '../hooks/usePitches';
+import { useProfile } from '../hooks/useProfile';
 
 const Dashboard: React.FC = () => {
     const navigate = useNavigate();
     const location = useLocation();
     const { address } = useWallet();
-    const { pitches, isLoading, error } = usePitches({ limit: 50, user: address || undefined });
-    const [activeTab, setActiveTab] = useState<'founder' | 'investor'>('founder');
+    const { pitches, isLoading: pitchesLoading, error: pitchesError } = usePitches({ limit: 50, user: address || undefined });
+    const { profile, isLoading: profileLoading, error: profileError } = useProfile(address);
+    const [activeTab, setActiveTab] = useState<'founder' | 'investor' | 'receipts'>('founder');
+
+    const isLoading = pitchesLoading || profileLoading;
+    const error = pitchesError || profileError;
 
     const userPitches = pitches.filter(p =>
         address && p.founder.toLowerCase() === address.toLowerCase()
@@ -22,10 +27,13 @@ const Dashboard: React.FC = () => {
         address && p.investments?.some(i => i.investor.toLowerCase() === address.toLowerCase())
     );
 
-    const totalInvested = investedPitches.reduce((sum, p) => {
-        const userInvestments = p.investments?.filter(i => i.investor.toLowerCase() === address?.toLowerCase()) || [];
-        return sum + userInvestments.reduce((s, i) => s + i.amount, 0);
-    }, 0);
+    const stats = profile?.stats || {
+        pitchesCreated: userPitches.length,
+        pitchesInvested: investedPitches.length,
+        totalInvested: 0,
+        totalRaised: 0,
+        rewardBalance: 0
+    };
 
     const formatAddress = (addr: string | null) => {
         if (!addr) return 'Not connected';
@@ -97,15 +105,16 @@ const Dashboard: React.FC = () => {
                             </Button>
                         </div>
 
-                        <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-12">
-                            <StatsCard label="Total Pitches" value={String(userPitches.length)} sub="Created" />
+                        <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-5 gap-6 mb-12">
+                            <StatsCard label="Total Pitches" value={String(stats.pitchesCreated)} sub="Created" />
                             <StatsCard label="Verified" value={String(userPitches.filter(p => p.status === 'VERIFIED').length)} sub="On-chain" />
-                            <StatsCard label="Invested" value={String(investedPitches.length)} sub="Startups" />
-                            <StatsCard label="Total Invested" value={(totalInvested / 1000000).toFixed(2)} sub="STX" />
+                            <StatsCard label="Invested" value={String(stats.pitchesInvested)} sub="Startups" />
+                            <StatsCard label="Total Invested" value={(stats.totalInvested / 1000000).toFixed(2)} sub="STX" />
+                            <StatsCard label="PPR Rewards" value={(stats.rewardBalance / 1000000).toFixed(0)} sub="PPR Tokens" highlighted />
                         </div>
 
                         {/* Tabs */}
-                        <div className="flex gap-4 mb-8">
+                        <div className="flex flex-wrap gap-4 mb-8">
                             <button
                                 onClick={() => setActiveTab('founder')}
                                 className={`px-6 py-3 rounded-xl font-medium transition-all ${activeTab === 'founder'
@@ -125,6 +134,16 @@ const Dashboard: React.FC = () => {
                             >
                                 <TrendingUp size={18} className="inline mr-2" />
                                 My Investments
+                            </button>
+                            <button
+                                onClick={() => setActiveTab('receipts')}
+                                className={`px-6 py-3 rounded-xl font-medium transition-all ${activeTab === 'receipts'
+                                    ? 'bg-brand-accent text-white'
+                                    : 'text-white/60 hover:text-white hover:bg-white/5'
+                                    }`}
+                            >
+                                <Shield size={18} className="inline mr-2" />
+                                NFT Receipts
                             </button>
                         </div>
 
@@ -153,7 +172,7 @@ const Dashboard: React.FC = () => {
                                     </Button>
                                 </div>
                             )
-                        ) : (
+                        ) : activeTab === 'investor' ? (
                             investedPitches.length > 0 ? (
                                 <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
                                     {investedPitches.map(pitch => {
@@ -182,6 +201,51 @@ const Dashboard: React.FC = () => {
                                     </Button>
                                 </div>
                             )
+                        ) : (
+                            profile?.receipts && profile.receipts.length > 0 ? (
+                                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                                    {profile.receipts.map(receipt => (
+                                        <div key={receipt.receiptId} className="relative group">
+                                            <div className="absolute inset-0 bg-brand-accent/20 blur-xl opacity-0 group-hover:opacity-100 transition-opacity rounded-3xl"></div>
+                                            <div className="relative glass p-6 rounded-3xl border-brand-accent/50 bg-gradient-to-br from-brand-accent/10 to-transparent">
+                                                <div className="flex justify-between items-start mb-4">
+                                                    <div className="p-2 bg-brand-accent/20 rounded-lg text-brand-accent">
+                                                        <Shield size={24} />
+                                                    </div>
+                                                    <span className="text-xs font-mono text-white/40">#{receipt.receiptId}</span>
+                                                </div>
+                                                <h4 className="text-lg font-bold mb-1">Investment Receipt</h4>
+                                                <p className="text-2xl font-black text-white mb-4">{(receipt.amount / 1000000).toFixed(2)} STX</p>
+                                                <div className="pt-4 border-t border-white/10 space-y-2">
+                                                    <div className="flex justify-between text-[10px] uppercase tracking-wider">
+                                                        <span className="text-white/40">Status</span>
+                                                        <span className="text-brand-accent font-bold text-[10px]">VERIFIED</span>
+                                                    </div>
+                                                    <div className="flex justify-between text-[10px] uppercase tracking-wider">
+                                                        <span className="text-white/40">Network</span>
+                                                        <span className="text-white/60">Stacks Testnet</span>
+                                                    </div>
+                                                </div>
+                                                <a
+                                                    href={`https://explorer.hiro.so/txid/${receipt.txid}?chain=testnet`}
+                                                    target="_blank"
+                                                    rel="noopener noreferrer"
+                                                    className="mt-6 block w-full py-2 text-center text-xs font-bold bg-white/5 hover:bg-white/10 rounded-xl transition-colors border border-white/10"
+                                                >
+                                                    View Transaction
+                                                </a>
+                                            </div>
+                                        </div>
+                                    ))}
+                                </div>
+                            ) : (
+                                <div className="text-center py-12 text-white/40">
+                                    <p className="mb-4">You don't have any NFT receipts yet. Invest in a pitch to earn one!</p>
+                                    <Button variant="outline" onClick={() => navigate('/explorer')}>
+                                        Explore Pitches
+                                    </Button>
+                                </div>
+                            )
                         )}
                     </section>
                 </div>
@@ -197,11 +261,14 @@ const DashboardNavItem: React.FC<{ icon: React.ReactNode, label: string, active?
     </button>
 );
 
-const StatsCard: React.FC<{ label: string, value: string, sub: string }> = ({ label, value, sub }) => (
-    <div className="glass p-6 rounded-2xl">
+const StatsCard: React.FC<{ label: string, value: string, sub: string, highlighted?: boolean }> = ({ label, value, sub, highlighted }) => (
+    <div className={`glass p-6 rounded-2xl relative overflow-hidden ${highlighted ? 'border-brand-accent/50' : ''}`}>
+        {highlighted && (
+            <div className="absolute inset-0 bg-brand-accent/5 -z-10"></div>
+        )}
         <div className="text-white/40 text-xs uppercase tracking-widest font-bold mb-2">{label}</div>
-        <div className="text-3xl font-extrabold mb-1">{value}</div>
-        <div className="text-brand-accent text-[10px] font-medium uppercase tracking-wider">{sub}</div>
+        <div className={`text-3xl font-extrabold mb-1 ${highlighted ? 'text-brand-accent' : ''}`}>{value}</div>
+        <div className={`${highlighted ? 'text-brand-accent/60' : 'text-brand-accent'} text-[10px] font-medium uppercase tracking-wider`}>{sub}</div>
     </div>
 );
 

@@ -354,6 +354,9 @@ export class PitchController {
                 return sum + (pitch.investments?.reduce((s, i) => s + i.amount, 0) || 0);
             }, 0);
 
+            const rewardBalance = await StacksService.getRewardBalance(address).catch(() => 0) || 0;
+            const receipts = await StacksService.getUserReceipts(address).catch(() => []) || [];
+
             const notifications = pitches.flatMap(p =>
                 (p.notifications || []).map(n => ({
                     ...n,
@@ -370,7 +373,9 @@ export class PitchController {
                     pitchesInvested: investedPitches.length,
                     totalInvested,
                     totalRaised,
+                    rewardBalance,
                 },
+                receipts,
                 notifications
             });
         } catch (error) {

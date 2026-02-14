@@ -2,6 +2,8 @@ import { STACKS_TESTNET } from '@stacks/network';
 import {
     fetchCallReadOnlyFunction,
     bufferCV,
+    principalCV,
+    uintCV,
     cvToJSON,
 } from '@stacks/transactions';
 import * as crypto from 'crypto';
@@ -145,6 +147,70 @@ export class StacksService {
             return parsed.value?.value ?? null;
         } catch (error) {
             console.error('Error fetching boost fee:', error);
+            return null;
+        }
+    }
+    static async getRewardBalance(address: string): Promise<number | null> {
+        try {
+            const result = await fetchCallReadOnlyFunction({
+                contractAddress: CONTRACT_ADDRESS,
+                contractName: CONTRACT_NAME,
+                functionName: 'get-reward-balance',
+                functionArgs: [principalCV(address)],
+                network,
+                senderAddress: CONTRACT_ADDRESS,
+            });
+            const parsed = cvToJSON(result);
+            return parsed.value?.value?.value ?? 0;
+        } catch (error) {
+            console.error('Error fetching reward balance:', error);
+            return null;
+        }
+    }
+
+    static async getUserReceipts(address: string) {
+        try {
+            const contractId = `${CONTRACT_ADDRESS}.${CONTRACT_NAME}`;
+            const response = await fetch(`${STACKS_API_URL}/extended/v1/address/${address}/nft_events?limit=50`);
+            const data = await response.json() as any;
+
+            // Filter for investment-receipt mint events from our contract
+            const events = data.nft_events.filter((e: any) =>
+                e.asset_identifier === `${contractId}::investment-receipt` &&
+                e.recipient === address
+            );
+
+            const receipts = await Promise.all(events.map(async (e: any) => {
+                const receiptId = parseInt(e.value.value);
+                const metadata = await this.getReceiptMetadata(receiptId);
+                return {
+                    receiptId,
+                    txid: e.tx_id,
+                    ...metadata
+                };
+            }));
+
+            return receipts;
+        } catch (error) {
+            console.error('Error fetching user receipts:', error);
+            return [];
+        }
+    }
+
+    static async getReceiptMetadata(receiptId: number) {
+        try {
+            const result = await fetchCallReadOnlyFunction({
+                contractAddress: CONTRACT_ADDRESS,
+                contractName: CONTRACT_NAME,
+                functionName: 'get-receipt-metadata',
+                functionArgs: [uintCV(receiptId)],
+                network,
+                senderAddress: CONTRACT_ADDRESS,
+            });
+            const parsed = cvToJSON(result);
+            return parsed.value;
+        } catch (error) {
+            console.error('Error fetching receipt metadata:', error);
             return null;
         }
     }

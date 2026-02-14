@@ -168,7 +168,16 @@ export const api = {
         pitchesInvested: number;
         totalInvested: number;
         totalRaised: number;
+        rewardBalance?: number;
       };
+      receipts?: Array<{
+        receiptId: number;
+        txid: string;
+        amount: number;
+        "pitch-id": string;
+        investor: string;
+        timestamp: number;
+      }>;
       notifications: any[];
     }>(`/users/${address}`),
 

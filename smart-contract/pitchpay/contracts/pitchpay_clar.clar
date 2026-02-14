@@ -26,10 +26,28 @@
     }
 )
 
+;; Fungible Token Definition
+(define-fungible-token pitch-pay-reward)
+
+;; Non-Fungible Token Definition
+(define-non-fungible-token investment-receipt uint)
+
 ;; Data Vars
 (define-data-var contract-owner principal tx-sender)
 (define-data-var pitch-fee uint u5000000)   ;; 5 STX
 (define-data-var boost-fee uint u10000000)  ;; 10 STX
+(define-data-var last-receipt-id uint u0)
+
+;; Data Maps
+(define-map receipt-metadata
+    uint
+    {
+        amount: uint,
+        pitch-id: (buff 32),
+        investor: principal,
+        timestamp: uint
+    }
+)
 
 ;; Private: validates a pitch-id buffer is non-empty (all-zero buff is suspicious)
 (define-private (is-valid-pitch-id (pitch-id (buff 32)))
@@ -56,6 +74,14 @@
 
 (define-read-only (get-contract-owner)
     (var-get contract-owner)
+)
+
+(define-read-only (get-reward-balance (account principal))
+    (ok (ft-get-balance pitch-pay-reward account))
+)
+
+(define-read-only (get-receipt-metadata (receipt-id uint))
+    (map-get? receipt-metadata receipt-id)
 )
 
 ;; Public functions
@@ -103,22 +129,43 @@
     )
 )
 
-;; Invest in a pitch - pay directly to founder
+;; Invest in a pitch - pay directly to founder, get PPR rewards and an NFT receipt
 (define-public (invest-in-pitch (pitch-id (buff 32)) (amount uint))
     (let (
         (pitch (unwrap! (get-pitch pitch-id) ERR-PITCH-NOT-FOUND))
         (founder (get founder pitch))
+        (receipt-id (+ (var-get last-receipt-id) u1))
     )
         (asserts! (>= amount MIN-INVESTMENT) ERR-INVALID-amount)
         
+        ;; 1. Transfer STX to founder
         (try! (stx-transfer? amount tx-sender founder))
         
+        ;; 2. Mint PPR rewards (1 PPR per 1 STX)
+        (try! (ft-mint? pitch-pay-reward amount tx-sender))
+
+        ;; 3. Mint NFT Investment Receipt
+        (try! (nft-mint? investment-receipt receipt-id tx-sender))
+        
+        ;; 4. Store metadata for the receipt
+        (map-set receipt-metadata receipt-id {
+            amount: amount,
+            pitch-id: pitch-id,
+            investor: tx-sender,
+            timestamp: stacks-block-height
+        })
+
+        ;; 5. Update last-receipt-id
+        (var-set last-receipt-id receipt-id)
+
         (print {
             event: "pitch-invested",
             pitch-id: pitch-id,
             investor: tx-sender,
             founder: founder,
             amount: amount,
+            reward: amount,
+            receipt-id: receipt-id
         })
         (ok true)
     )
