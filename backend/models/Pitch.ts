@@ -11,6 +11,7 @@ export interface IInvestment {
 }
 
 export interface INotification {
+    _id?: string;
     type: 'investment' | 'boost';
     from: string;
     pitchId: string;

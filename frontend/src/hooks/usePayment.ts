@@ -17,7 +17,7 @@ export function usePayment() {
 
     try {
       const response = await api.createPitch(data);
-      
+
       if ('status' in response && response.status === 402) {
         onPaymentRequired(response as PaymentDetails);
       } else {
@@ -35,7 +35,7 @@ export function usePayment() {
   const submitPitchPayment = useCallback(async (
     pitchIdHash: string,
     onPending: (txid: string) => void,
-    onSuccess: () => void,
+    onSuccess: (txid: string) => void,
     onError: (error: string) => void
   ) => {
     setIsProcessing(true);
@@ -43,10 +43,10 @@ export function usePayment() {
 
     try {
       const result: TransactionResult = await payForPitch(pitchIdHash);
-      
+
       if (result.success && result.txid) {
         onPending(result.txid);
-        onSuccess();
+        onSuccess(result.txid);
       } else {
         throw new Error('Transaction failed');
       }
@@ -92,7 +92,7 @@ export function usePayment() {
 
     try {
       const response = await api.boostPitch(pitchId, authHeader);
-      
+
       if ('status' in response && response.status === 402) {
         onPaymentRequired(response as PaymentDetails);
       } else {
@@ -110,7 +110,7 @@ export function usePayment() {
   const submitBoostPayment = useCallback(async (
     pitchIdHash: string,
     onPending: (txid: string) => void,
-    onSuccess: () => void,
+    onSuccess: (txid: string) => void,
     onError: (error: string) => void
   ) => {
     setIsProcessing(true);
@@ -118,10 +118,10 @@ export function usePayment() {
 
     try {
       const result: TransactionResult = await payForBoost(pitchIdHash);
-      
+
       if (result.success && result.txid) {
         onPending(result.txid);
-        onSuccess();
+        onSuccess(result.txid);
       } else {
         throw new Error('Transaction failed');
       }

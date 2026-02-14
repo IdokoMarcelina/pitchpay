@@ -55,8 +55,12 @@ export const wallet = {
         network: 'testnet',
       }) as { addresses: { address: string }[] };
       
-      if (response?.addresses?.[0]?.address) {
-        currentAddress = response.addresses[0].address;
+      const addresses = response.addresses || [];
+      const stxAddress = addresses.find(a => a.address.startsWith('ST'))?.address 
+        || addresses[0]?.address;
+      
+      if (stxAddress) {
+        currentAddress = stxAddress;
         storeAuth(currentAddress);
         return { address: currentAddress };
       }

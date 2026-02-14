@@ -348,7 +348,7 @@ export class PitchController {
             
             const notifications = pitches.flatMap(p => 
                 (p.notifications || []).map(n => ({
-                    ...n.toObject(),
+                    ...n,
                     pitchTitle: p.title
                 }))
             ).sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());

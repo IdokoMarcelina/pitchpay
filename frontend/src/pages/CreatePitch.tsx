@@ -25,7 +25,6 @@ const CreatePitch: React.FC = () => {
     const [paymentDetails, setPaymentDetails] = useState<PaymentDetails | null>(null);
     const [paymentStep, setPaymentStep] = useState<'details' | 'pending' | 'verifying' | 'success'>('details');
     const [pitchId, setPitchId] = useState<string | null>(null);
-    const [txid, setTxid] = useState<string | null>(null);
 
     const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
         setFormData(prev => ({
@@ -78,22 +77,20 @@ const CreatePitch: React.FC = () => {
         }
 
         const pitchIdHash = paymentDetails.payment_details.contract_call.args[0].replace('0x', '');
-        
+
         setPaymentStep('pending');
         setError(null);
 
         try {
             await submitPitchPayment(
                 pitchIdHash,
+                () => { },
                 (txId) => {
-                    setTxid(txId);
-                },
-                async () => {
                     setPaymentStep('verifying');
-                    if (pitchId && txid) {
-                        await verifyPitchPayment(
+                    if (pitchId) {
+                        verifyPitchPayment(
                             pitchId,
-                            txid,
+                            txId,
                             () => {
                                 setPaymentStep('success');
                                 setTimeout(() => navigate('/dashboard'), 2000);
@@ -188,14 +185,14 @@ const CreatePitch: React.FC = () => {
                                         </div>
                                     )}
                                 </div>
-                                
+
                                 {paymentStep === 'pending' && (
                                     <div className="p-4 bg-yellow-500/10 border border-yellow-500/20 rounded-xl text-yellow-400 text-center">
                                         <Loader2 className="animate-spin inline mr-2" />
                                         Waiting for transaction confirmation...
                                     </div>
                                 )}
-                                
+
                                 {paymentStep === 'verifying' && (
                                     <div className="p-4 bg-blue-500/10 border border-blue-500/20 rounded-xl text-blue-400 text-center">
                                         <Loader2 className="animate-spin inline mr-2" />
@@ -204,8 +201,8 @@ const CreatePitch: React.FC = () => {
                                 )}
 
                                 <div className="flex gap-4">
-                                    <Button 
-                                        variant="secondary" 
+                                    <Button
+                                        variant="secondary"
                                         onClick={() => {
                                             setPaymentDetails(null);
                                             setPaymentStep('details');
@@ -215,8 +212,8 @@ const CreatePitch: React.FC = () => {
                                     >
                                         Back
                                     </Button>
-                                    <Button 
-                                        variant="primary" 
+                                    <Button
+                                        variant="primary"
                                         className="flex-1"
                                         disabled={isProcessing || paymentStep === 'pending' || paymentStep === 'verifying'}
                                         onClick={handlePayment}
@@ -335,8 +332,8 @@ const CreatePitch: React.FC = () => {
                                 </div>
 
                                 <div className="flex flex-col gap-4 pt-4">
-                                    <Button 
-                                        variant="primary" 
+                                    <Button
+                                        variant="primary"
                                         className="w-full py-4 text-lg"
                                         type="submit"
                                         disabled={isProcessing}
