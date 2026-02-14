@@ -39,13 +39,26 @@ function clearAuth(): void {
 
 export const wallet = {
   async connect(): Promise<WalletSession> {
-    console.log('Initiating wallet connection...');
+    console.log('--- Wallet Connection Debug Info ---');
+    console.log('window.StacksProvider:', (window as any).StacksProvider);
+    console.log('window.XverseProviders:', (window as any).XverseProviders);
+    console.log('window.btc:', (window as any).btc);
+    console.log('--- End Debug Info ---');
+
+    console.log('Initiating wallet connection via @stacks/connect...');
     try {
-      console.log('Calling @stacks/connect connect({ network: "testnet" })...');
+      // Version 8 uses specific IDs for provider detection
+      // Xverse is identified internally as 'XverseProviders.BitcoinProvider'
       const result = await connect({
-        network: 'testnet',
+        forceWalletSelect: true,
+        approvedProviderIds: [
+          'LeatherProvider',
+          'XverseProviders.BitcoinProvider',
+          'xverse'
+        ] as any,
       });
-      console.log('Connect successful. Addresses:', result.addresses);
+
+      console.log('Connect successful. Result:', result);
 
       const stxAddress = result.addresses.find(a => a.address.startsWith('ST'))?.address
         || result.addresses[0]?.address;
