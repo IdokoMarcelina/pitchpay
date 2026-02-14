@@ -8,7 +8,7 @@ import {
 import { STACKS_TESTNET } from '@stacks/network';
 
 const CONTRACT_ADDRESS = import.meta.env.VITE_CONTRACT_ADDRESS || 'ST1Z0AQZHXW508XB03EWKH6KK90A0T084DTD8DPTG';
-const CONTRACT_NAME = 'pitchpay_clar';
+const CONTRACT_NAME = import.meta.env.VITE_CONTRACT_NAME || 'pitchpay_clar_v1';
 
 export interface TransactionResult {
   txid: string;
