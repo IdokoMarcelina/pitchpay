@@ -6,6 +6,7 @@ import rateLimit from 'express-rate-limit';
 import helmet from 'helmet';
 import pitchRoutes from './routes/pitch';
 import authRoutes from './routes/auth';
+import aiRoutes from './routes/ai';
 import { errorHandler } from './middleware/error.middleware';
 import logger, { requestLogger, errorLogger } from './middleware/logger';
 import AuthSession from './models/AuthSession';
@@ -62,6 +63,7 @@ app.use('/api/auth', authLimiter);
 
 app.use('/api', pitchRoutes);
 app.use('/api/auth', authRoutes);
+app.use('/api/ai', aiRoutes);
 
 app.get('/health', (req, res) => res.send('PitchPay API is running'));
 

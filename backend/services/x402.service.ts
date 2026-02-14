@@ -2,6 +2,7 @@ import { Request, Response } from 'express';
 import { StacksService, getContractId } from './stacks.service';
 import Pitch from '../models/Pitch';
 import logger from '../middleware/logger';
+import { AIService } from './ai.service';
 
 interface StacksTx {
     tx_status: string;
@@ -99,6 +100,8 @@ export class X402Service {
 
             if (onChainData && onChainData.founder === pitch.founder) {
                 pitch.status = 'VERIFIED';
+                // Trigger AI analysis for the verified pitch
+                await AIService.processNewPitch(pitch);
             } else {
                 // Either tx_status is 'success' (but not yet on-chain) or 'pending'
                 // In both cases, we mark as PAID to acknowledge the transaction
@@ -231,6 +234,8 @@ export class X402Service {
         if (pitch.status === 'PENDING' || pitch.status === 'PAID') {
             pitch.status = 'VERIFIED';
             updated = true;
+            // Trigger AI analysis for the newly synced and verified pitch
+            await AIService.processNewPitch(pitch);
         }
 
         if (updated) {

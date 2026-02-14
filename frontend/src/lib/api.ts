@@ -181,6 +181,25 @@ export const api = {
       notifications: any[];
     }>(`/users/${address}`),
 
+  // AI Agent Endpoints
+  getAIAgent: (address: string) =>
+    fetchApi<{ strategy: string; isActive: boolean }>(`/ai/agent/${address}`),
+
+  updateAIAgent: (address: string, data: { strategy: string; isActive: boolean }) =>
+    fetchApi<any>(`/ai/agent/${address}`, {
+      method: 'POST',
+      body: JSON.stringify(data),
+    }),
+
+  getRecommendations: (address: string) =>
+    fetchApi<any[]>(`/ai/recommendations/${address}`),
+
+  updateRecommendationStatus: (id: string, status: string) =>
+    fetchApi<any>(`/ai/recommendations/${id}`, {
+      method: 'PATCH',
+      body: JSON.stringify({ status }),
+    }),
+
   // Notifications
   getNotifications: (address: string) =>
     fetchApi<{ notifications: any[] }>(`/users/${address}/notifications`),

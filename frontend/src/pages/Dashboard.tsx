@@ -2,8 +2,9 @@ import React, { useState } from 'react';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
 import Navbar from '../components/Navbar';
 import Button from '../components/Button';
-import { Plus, LayoutDashboard, Wallet, BarChart2, PlusCircle, Rocket, Loader2, TrendingUp, Shield } from 'lucide-react';
+import { Plus, LayoutDashboard, Wallet, BarChart2, PlusCircle, Rocket, Loader2, TrendingUp, Shield, Bot } from 'lucide-react';
 import PitchCard from '../components/PitchCard';
+import AIAgentTab from '../components/AIAgentTab';
 import { useWallet } from '../context/WalletContext';
 import { usePitches } from '../hooks/usePitches';
 import { useProfile } from '../hooks/useProfile';
@@ -14,7 +15,7 @@ const Dashboard: React.FC = () => {
     const { address } = useWallet();
     const { pitches, isLoading: pitchesLoading, error: pitchesError } = usePitches({ limit: 50, user: address || undefined });
     const { profile, isLoading: profileLoading, error: profileError } = useProfile(address);
-    const [activeTab, setActiveTab] = useState<'founder' | 'investor' | 'receipts'>('founder');
+    const [activeTab, setActiveTab] = useState<'founder' | 'investor' | 'receipts' | 'ai'>('founder');
 
     const isLoading = pitchesLoading || profileLoading;
     const error = pitchesError || profileError;
@@ -145,6 +146,16 @@ const Dashboard: React.FC = () => {
                                 <Shield size={18} className="inline mr-2" />
                                 NFT Receipts
                             </button>
+                            <button
+                                onClick={() => setActiveTab('ai')}
+                                className={`px-6 py-3 rounded-xl font-medium transition-all ${activeTab === 'ai'
+                                    ? 'bg-brand-accent text-white'
+                                    : 'text-white/60 hover:text-white hover:bg-white/5'
+                                    }`}
+                            >
+                                <Bot size={18} className="inline mr-2" />
+                                AI Agent
+                            </button>
                         </div>
 
                         {isLoading ? (
@@ -156,6 +167,7 @@ const Dashboard: React.FC = () => {
                                 {error}
                             </div>
                         ) : activeTab === 'founder' ? (
+                            // ...
                             userPitches.length > 0 ? (
                                 <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
                                     {userPitches.map(pitch => (
@@ -201,6 +213,8 @@ const Dashboard: React.FC = () => {
                                     </Button>
                                 </div>
                             )
+                        ) : activeTab === 'ai' ? (
+                            <AIAgentTab />
                         ) : (
                             profile?.receipts && profile.receipts.length > 0 ? (
                                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
