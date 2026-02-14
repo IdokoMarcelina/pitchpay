@@ -96,9 +96,9 @@ export class X402Service {
             const pitch = await Pitch.findById(pitchId);
             if (!pitch) return { success: false, error: 'Pitch not found' };
 
-            const onChainData = await StacksService.getPitchOnChain(pitch.pitchIdHash);
+            const onChainData = await StacksService.getPitchOnChain(pitch.pitchIdHash) as any;
 
-            if (onChainData && onChainData.founder === pitch.founder) {
+            if (onChainData && onChainData.founder.toLowerCase() === pitch.founder.toLowerCase()) {
                 pitch.status = 'VERIFIED';
                 // Trigger AI analysis for the verified pitch
                 await AIService.processNewPitch(pitch);
@@ -222,7 +222,7 @@ export class X402Service {
 
         let updated = false;
 
-        if (onChainData.founder !== pitch.founder) {
+        if (onChainData.founder.toLowerCase() !== pitch.founder.toLowerCase()) {
             return { synced: false, reason: 'founder_mismatch' };
         }
 

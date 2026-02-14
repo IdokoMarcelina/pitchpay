@@ -7,6 +7,7 @@ import {
     cvToJSON,
 } from '@stacks/transactions';
 import * as crypto from 'crypto';
+import fetch from 'node-fetch';
 import AuthSession from '../models/AuthSession';
 import logger from '../middleware/logger';
 
@@ -24,6 +25,21 @@ const STACKS_API_URL =
 export const getContractId = () => `${CONTRACT_ADDRESS}.${CONTRACT_NAME}`;
 
 const NONCE_EXPIRY_MINUTES = 5;
+
+const flattenCV = (cvJson: any): any => {
+    if (!cvJson) return null;
+    if (cvJson.type === 'uint' || cvJson.type === 'int') return parseInt(cvJson.value);
+    if (cvJson.type === 'bool') return cvJson.value;
+    if (cvJson.type === 'principal' || cvJson.type === 'buff') return cvJson.value;
+    if (cvJson.type.startsWith('(tuple')) {
+        const result: any = {};
+        for (const [key, val] of Object.entries(cvJson.value)) {
+            result[key] = flattenCV(val);
+        }
+        return result;
+    }
+    return cvJson.value;
+};
 
 export class StacksService {
     static generatePitchHash(content: string): string {
@@ -90,8 +106,9 @@ export class StacksService {
                 network,
                 senderAddress: CONTRACT_ADDRESS,
             });
-
-            return cvToJSON(result).value;
+            const json = cvToJSON(result);
+            if (!json.value) return null;
+            return flattenCV(json.value);
         } catch (error) {
             console.error('Error calling read-only function:', error);
             return null;
@@ -207,8 +224,9 @@ export class StacksService {
                 network,
                 senderAddress: CONTRACT_ADDRESS,
             });
-            const parsed = cvToJSON(result);
-            return parsed.value;
+            const json = cvToJSON(result);
+            if (!json.value) return null;
+            return flattenCV(json.value);
         } catch (error) {
             console.error('Error fetching receipt metadata:', error);
             return null;
