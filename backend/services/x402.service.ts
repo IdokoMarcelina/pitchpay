@@ -161,6 +161,25 @@ export class X402Service {
         };
     }
 
+    static async getPitchPaymentDetails(pitchId: string, pitchIdHash: string) {
+        const { pitchFee } = await getCachedFees();
+
+        return {
+            status: 402,
+            message: 'Payment Required: Send 5 STX to publish your pitch',
+            payment_details: {
+                type: 'stacks',
+                amount: pitchFee,
+                contract_call: {
+                    contract: getContractId(),
+                    function: 'pay-for-pitch',
+                    args: [`0x${pitchIdHash}`],
+                },
+                internal_id: pitchId,
+            },
+        };
+    }
+
     static async syncWithOnChain(pitchId: string) {
         const pitch = await Pitch.findById(pitchId);
         if (!pitch) return null;

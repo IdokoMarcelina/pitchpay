@@ -45,6 +45,27 @@ export class PitchController {
         }
     }
 
+    static async getPaymentDetails(req: Request, res: Response) {
+        try {
+            const id = req.params.id as string;
+            const pitch = await Pitch.findById(id);
+
+            if (!pitch) {
+                return res.status(404).json({ error: 'Pitch not found' });
+            }
+
+            if (pitch.status !== 'PENDING') {
+                return res.status(400).json({ error: 'Pitch is already paid or verified' });
+            }
+
+            const paymentDetails = await X402Service.getPitchPaymentDetails(pitch._id.toString(), pitch.pitchIdHash);
+            return res.status(402).json(paymentDetails);
+        } catch (error) {
+            console.error('Error in getPaymentDetails:', error);
+            res.status(500).json({ error: 'Internal server error' });
+        }
+    }
+
     static async getPitches(req: Request, res: Response) {
         try {
             const page = Math.max(1, parseInt(req.query.page as string) || 1);

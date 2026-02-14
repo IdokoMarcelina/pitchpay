@@ -62,9 +62,9 @@ const Navbar: React.FC = () => {
         } else {
             try {
                 await connect();
-            } catch (error) {
+            } catch (error: any) {
                 console.error('Wallet connection failed:', error);
-                alert('Failed to connect wallet. Please make sure you have a Stacks wallet installed.');
+                alert(`Wallet connection failed: ${error.message || 'Unknown error'}. Please ensure your wallet extension is unlocked and set to Testnet.`);
             }
         }
     };
@@ -88,7 +88,7 @@ const Navbar: React.FC = () => {
                             <Link to="/dashboard" className="text-white/80 hover:text-white transition-colors">Dashboard</Link>
                             {isConnected && address && (
                                 <div className="relative">
-                                    <button 
+                                    <button
                                         onClick={() => setShowNotifications(!showNotifications)}
                                         className="relative p-2 text-white/80 hover:text-white transition-colors"
                                     >
@@ -99,7 +99,7 @@ const Navbar: React.FC = () => {
                                             </span>
                                         )}
                                     </button>
-                                    
+
                                     {showNotifications && (
                                         <div className="absolute right-0 mt-2 w-80 bg-brand-primary border border-white/10 rounded-xl shadow-xl overflow-hidden">
                                             <div className="p-4 border-b border-white/10">
@@ -138,8 +138,8 @@ const Navbar: React.FC = () => {
                                                 )}
                                             </div>
                                             {notifications.length > 0 && (
-                                                <Link 
-                                                    to={`/profile/${address}`} 
+                                                <Link
+                                                    to={`/profile/${address}`}
                                                     className="block p-3 text-center text-sm text-brand-accent hover:bg-white/5"
                                                     onClick={() => setShowNotifications(false)}
                                                 >
@@ -158,8 +158,8 @@ const Navbar: React.FC = () => {
                                     </Button>
                                 </Link>
                             ) : (
-                                <Button 
-                                    variant="primary" 
+                                <Button
+                                    variant="primary"
                                     onClick={handleWalletClick}
                                     disabled={isLoading}
                                 >
@@ -200,8 +200,8 @@ const Navbar: React.FC = () => {
                             {formatAddress(address)}
                         </Button>
                     ) : (
-                        <Button 
-                            variant="primary" 
+                        <Button
+                            variant="primary"
                             onClick={handleWalletClick}
                             disabled={isLoading}
                             className="w-full"

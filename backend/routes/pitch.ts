@@ -6,6 +6,7 @@ const router = Router();
 
 router.get('/pitches', PitchController.getPitches);
 router.get('/pitches/:id', PitchController.getPitchById);
+router.get('/pitches/:id/payment-details', PitchController.getPaymentDetails);
 router.post('/pitches', createPitchValidation, PitchController.createPitch);
 router.post('/pitches/:id/verify', verifyPitchValidation, PitchController.verifyPitch);
 router.post('/pitches/:id/boost', requireAuth, PitchController.boostPitch);

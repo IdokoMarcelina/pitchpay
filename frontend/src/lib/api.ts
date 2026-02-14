@@ -100,6 +100,9 @@ export const api = {
   getPitch: (id: string) =>
     fetchApi<Pitch>(`/pitches/${id}`),
 
+  getPitchPaymentDetails: (id: string) =>
+    fetchApi<PaymentDetails>(`/pitches/${id}/payment-details`),
+
   createPitch: (data: { title: string; description: string; website: string; founder: string }, authHeader?: string) =>
     fetchApi<Pitch | PaymentDetails>('/pitches', {
       method: 'POST',

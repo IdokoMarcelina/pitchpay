@@ -2,9 +2,10 @@ import React, { useState } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import Navbar from '../components/Navbar';
 import Button from '../components/Button';
-import { Shield, ArrowLeft, Loader2, Twitter, Github, Linkedin, TrendingUp, RefreshCw } from 'lucide-react';
+import { Shield, ArrowLeft, Loader2, Twitter, Github, Linkedin, TrendingUp, RefreshCw, CheckCircle } from 'lucide-react';
 import { usePitch } from '../hooks/usePitches';
 import { useWallet } from '../context/WalletContext';
+import { usePayment } from '../hooks/usePayment';
 import { api, type PaymentDetails } from '../lib/api';
 import { payForInvestment, type TransactionResult } from '../lib/transactions';
 
@@ -22,6 +23,13 @@ const PitchDetail: React.FC = () => {
     const [pendingTxid, setPendingTxid] = useState<string | null>(null);
     const [investSuccess, setInvestSuccess] = useState(false);
     const [syncMessage, setSyncMessage] = useState<string | null>(null);
+
+    // Pitch Payment State
+    const { isProcessing: isPayingPitch, submitPitchPayment, verifyPitchPayment } = usePayment();
+    const [showPitchModal, setShowPitchModal] = useState(false);
+    const [pitchPayDetails, setPitchPayDetails] = useState<PaymentDetails | null>(null);
+    const [pitchPayStep, setPitchPayStep] = useState<'details' | 'pending' | 'verifying' | 'success'>('details');
+    const [pitchPayError, setPitchPayError] = useState<string | null>(null);
 
     const handleInvest = async () => {
         if (!pitch || !isConnected) return;
@@ -65,6 +73,61 @@ const PitchDetail: React.FC = () => {
             }
         } finally {
             setIsInvesting(false);
+        }
+    };
+    const handlePitchPayment = async () => {
+        if (!pitch) return;
+        setPitchPayError(null);
+        try {
+            const details = await api.getPitchPaymentDetails(pitch._id);
+            setPitchPayDetails(details);
+            setShowPitchModal(true);
+            setPitchPayStep('details');
+        } catch (err: any) {
+            setPitchPayError(err.message || 'Failed to initiate payment');
+        }
+    };
+
+    const handleSubmitPitchPayment = async () => {
+        if (!pitchPayDetails?.payment_details.contract_call?.args?.[0] || !pitch || !address) return;
+
+        setPitchPayStep('pending');
+        setPitchPayError(null);
+
+        try {
+            const pitchIdHash = pitchPayDetails.payment_details.contract_call.args[0].replace('0x', '');
+
+            await submitPitchPayment(
+                pitchIdHash,
+                address,
+                pitchPayDetails.payment_details.amount,
+                () => { },
+                (txId) => {
+                    setPitchPayStep('verifying');
+                    verifyPitchPayment(
+                        pitch._id,
+                        txId,
+                        () => {
+                            setPitchPayStep('success');
+                            setTimeout(() => {
+                                setShowPitchModal(false);
+                                refreshPitch();
+                            }, 2000);
+                        },
+                        (err) => {
+                            setPitchPayError(err);
+                            setPitchPayStep('details');
+                        }
+                    );
+                },
+                (err) => {
+                    setPitchPayError(err);
+                    setPitchPayStep('details');
+                }
+            );
+        } catch (err: any) {
+            setPitchPayError(err.message || 'Payment failed');
+            setPitchPayStep('details');
         }
     };
 
@@ -198,11 +261,15 @@ const PitchDetail: React.FC = () => {
                                             </Button>
                                         )}
                                         {pitch.status === 'PENDING' && (
-                                            <Link to="/dashboard" className="block mt-2">
-                                                <Button variant="primary" className="w-full py-4">
+                                            <div className="mt-2">
+                                                <Button
+                                                    variant="primary"
+                                                    className="w-full py-4"
+                                                    onClick={handlePitchPayment}
+                                                >
                                                     Complete Payment
                                                 </Button>
-                                            </Link>
+                                            </div>
                                         )}
                                         {(pitch.status === 'PAID' || pitch.status === 'VERIFIED') && !pitch.isBoosted && (
                                             <Link to="/boost" className="block mt-2">
@@ -242,6 +309,74 @@ const PitchDetail: React.FC = () => {
                     </aside>
                 </div>
             </main>
+
+            {/* Pitch Payment Modal */}
+            {showPitchModal && (
+                <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+                    <div className="glass rounded-3xl p-8 max-w-md w-full">
+                        <h3 className="font-bold text-2xl mb-6">Complete Launch</h3>
+
+                        {pitchPayStep === 'success' ? (
+                            <div className="text-center py-8">
+                                <div className="w-16 h-16 bg-green-500/20 rounded-full flex items-center justify-center mx-auto mb-4">
+                                    <CheckCircle size={32} className="text-green-400" />
+                                </div>
+                                <h4 className="font-bold text-xl mb-2">Payment Verified!</h4>
+                                <p className="text-white/60">Your pitch is being published to the blockchain.</p>
+                            </div>
+                        ) : (
+                            <div className="space-y-6">
+                                <div className="p-4 bg-brand-accent/10 rounded-xl border border-brand-accent/30">
+                                    <p className="text-white/60 mb-2">Launch Fee:</p>
+                                    <p className="text-2xl font-bold text-brand-accent">
+                                        {pitchPayDetails ? (pitchPayDetails.payment_details.amount / 1000000).toFixed(2) : '5.00'} STX
+                                    </p>
+                                </div>
+
+                                {pitchPayStep === 'pending' && (
+                                    <div className="p-4 bg-yellow-500/10 rounded-xl border border-yellow-500/30">
+                                        <p className="text-yellow-400 text-sm flex items-center gap-2">
+                                            <Loader2 size={14} className="animate-spin" /> Transaction initiated...
+                                        </p>
+                                    </div>
+                                )}
+
+                                {pitchPayStep === 'verifying' && (
+                                    <div className="p-4 bg-blue-500/10 rounded-xl border border-blue-500/30 text-blue-400 text-sm flex items-center gap-2">
+                                        <Loader2 size={14} className="animate-spin" /> Verifying state...
+                                    </div>
+                                )}
+
+                                {pitchPayError && (
+                                    <div className="p-4 bg-red-500/10 rounded-xl border border-red-500/30 text-red-400 text-sm">
+                                        {pitchPayError}
+                                    </div>
+                                )}
+
+                                <div className="flex gap-4">
+                                    <Button
+                                        variant="outline"
+                                        className="flex-1"
+                                        onClick={() => setShowPitchModal(false)}
+                                        disabled={pitchPayStep === 'pending' || pitchPayStep === 'verifying'}
+                                    >
+                                        Cancel
+                                    </Button>
+                                    <Button
+                                        variant="primary"
+                                        className="flex-1"
+                                        onClick={handleSubmitPitchPayment}
+                                        disabled={isPayingPitch || pitchPayStep === 'pending' || pitchPayStep === 'verifying'}
+                                    >
+                                        {isPayingPitch ? <Loader2 size={18} className="animate-spin mr-2" /> : null}
+                                        Pay & Publish
+                                    </Button>
+                                </div>
+                            </div>
+                        )}
+                    </div>
+                </div>
+            )}
 
             {/* Investment Modal */}
             {showInvestModal && (
