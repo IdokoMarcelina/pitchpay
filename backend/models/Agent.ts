@@ -9,7 +9,7 @@ export interface IAgent extends Document {
 }
 
 const AgentSchema: Schema = new Schema({
-    userAddress: { type: String, required: true, unique: true },
+    userAddress: { type: String, required: true, unique: true, lowercase: true },
     strategy: { type: String, required: true },
     isActive: { type: Boolean, default: true },
     createdAt: { type: Date, default: Date.now },

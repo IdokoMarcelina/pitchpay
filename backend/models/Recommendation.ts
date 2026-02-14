@@ -10,7 +10,7 @@ export interface IRecommendation extends Document {
 }
 
 const RecommendationSchema: Schema = new Schema({
-    userAddress: { type: String, required: true, index: true },
+    userAddress: { type: String, required: true, index: true, lowercase: true },
     pitchId: { type: Schema.Types.ObjectId, ref: 'Pitch', required: true },
     reasoning: { type: String, required: true },
     score: { type: Number, required: true },

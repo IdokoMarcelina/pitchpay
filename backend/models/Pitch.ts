@@ -40,7 +40,7 @@ export interface IPitch extends Document {
 }
 
 const InvestmentSchema: Schema = new Schema({
-    investor: { type: String, required: true },
+    investor: { type: String, required: true, lowercase: true },
     amount: { type: Number, required: true },
     txid: { type: String, required: true },
     createdAt: { type: Date, default: Date.now }
@@ -48,7 +48,7 @@ const InvestmentSchema: Schema = new Schema({
 
 const NotificationSchema: Schema = new Schema({
     type: { type: String, enum: ['investment', 'boost'], required: true },
-    from: { type: String, required: true },
+    from: { type: String, required: true, lowercase: true },
     pitchId: { type: String, required: true },
     pitchTitle: { type: String, required: true },
     amount: { type: Number },
@@ -62,7 +62,7 @@ const PitchSchema: Schema = new Schema({
     title: { type: String, required: true },
     description: { type: String, required: true },
     website: { type: String, required: true },
-    founder: { type: String, required: true },
+    founder: { type: String, required: true, lowercase: true },
     category: { type: String, enum: PITCH_CATEGORIES, default: 'Other' },
     logoUrl: { type: String },
     deckUrl: { type: String },
