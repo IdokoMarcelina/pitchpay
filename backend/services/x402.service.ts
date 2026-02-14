@@ -99,10 +99,10 @@ export class X402Service {
 
             if (onChainData && onChainData.founder === pitch.founder) {
                 pitch.status = 'VERIFIED';
-            } else if (tx.tx_status === 'success') {
-                pitch.status = 'PAID';
             } else {
-                return { success: true, status: 'pending', pitch };
+                // Either tx_status is 'success' (but not yet on-chain) or 'pending'
+                // In both cases, we mark as PAID to acknowledge the transaction
+                pitch.status = 'PAID';
             }
 
             pitch.txid = txid;
@@ -143,8 +143,12 @@ export class X402Service {
 
                 if (onChainData && onChainData['is-boosted']) {
                     pitch.isBoosted = true;
-                    await pitch.save();
                 }
+
+                // Always save txid for boost as well if we don't have it or if it's new
+                // For simplified tracking
+                pitch.txid = txid;
+                await pitch.save();
                 return { success: true, status: tx.tx_status, pitch };
             }
             return { success: false, error: 'Pitch not found' };

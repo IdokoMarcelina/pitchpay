@@ -11,14 +11,14 @@ const Dashboard: React.FC = () => {
     const navigate = useNavigate();
     const location = useLocation();
     const { address } = useWallet();
-    const { pitches, isLoading, error } = usePitches({ limit: 50 });
+    const { pitches, isLoading, error } = usePitches({ limit: 50, user: address || undefined });
     const [activeTab, setActiveTab] = useState<'founder' | 'investor'>('founder');
-    
-    const userPitches = pitches.filter(p => 
+
+    const userPitches = pitches.filter(p =>
         address && p.founder.toLowerCase() === address.toLowerCase()
     );
 
-    const investedPitches = pitches.filter(p => 
+    const investedPitches = pitches.filter(p =>
         address && p.investments?.some(i => i.investor.toLowerCase() === address.toLowerCase())
     );
 
@@ -43,24 +43,24 @@ const Dashboard: React.FC = () => {
                     {/* Sidebar */}
                     <aside className="lg:w-64 space-y-2">
                         <Link to="/dashboard">
-                            <DashboardNavItem 
-                                icon={<LayoutDashboard size={20} />} 
-                                label="Overview" 
-                                active={isActive('/dashboard')} 
+                            <DashboardNavItem
+                                icon={<LayoutDashboard size={20} />}
+                                label="Overview"
+                                active={isActive('/dashboard')}
                             />
                         </Link>
                         <Link to="/analytics">
-                            <DashboardNavItem 
-                                icon={<BarChart2 size={20} />} 
-                                label="Analytics" 
-                                active={isActive('/analytics')} 
+                            <DashboardNavItem
+                                icon={<BarChart2 size={20} />}
+                                label="Analytics"
+                                active={isActive('/analytics')}
                             />
                         </Link>
                         <Link to="/create">
-                            <DashboardNavItem 
-                                icon={<PlusCircle size={20} />} 
-                                label="New Pitch" 
-                                active={isActive('/create')} 
+                            <DashboardNavItem
+                                icon={<PlusCircle size={20} />}
+                                label="New Pitch"
+                                active={isActive('/create')}
                             />
                         </Link>
                         <div className="pt-8 px-4">
@@ -68,8 +68,8 @@ const Dashboard: React.FC = () => {
                                 <div className="relative z-10">
                                     <h4 className="font-bold text-sm mb-2 text-brand-accent">Boost Portfolio</h4>
                                     <p className="text-xs text-white/60 mb-4">Get 2x more visibility for your latest startups.</p>
-                                    <Button 
-                                        variant="primary" 
+                                    <Button
+                                        variant="primary"
                                         className="w-full py-2 text-xs"
                                         onClick={() => navigate('/boost')}
                                     >
@@ -108,22 +108,20 @@ const Dashboard: React.FC = () => {
                         <div className="flex gap-4 mb-8">
                             <button
                                 onClick={() => setActiveTab('founder')}
-                                className={`px-6 py-3 rounded-xl font-medium transition-all ${
-                                    activeTab === 'founder' 
-                                        ? 'bg-brand-accent text-white' 
-                                        : 'text-white/60 hover:text-white hover:bg-white/5'
-                                }`}
+                                className={`px-6 py-3 rounded-xl font-medium transition-all ${activeTab === 'founder'
+                                    ? 'bg-brand-accent text-white'
+                                    : 'text-white/60 hover:text-white hover:bg-white/5'
+                                    }`}
                             >
                                 <Rocket size={18} className="inline mr-2" />
                                 My Pitches
                             </button>
                             <button
                                 onClick={() => setActiveTab('investor')}
-                                className={`px-6 py-3 rounded-xl font-medium transition-all ${
-                                    activeTab === 'investor' 
-                                        ? 'bg-brand-accent text-white' 
-                                        : 'text-white/60 hover:text-white hover:bg-white/5'
-                                }`}
+                                className={`px-6 py-3 rounded-xl font-medium transition-all ${activeTab === 'investor'
+                                    ? 'bg-brand-accent text-white'
+                                    : 'text-white/60 hover:text-white hover:bg-white/5'
+                                    }`}
                             >
                                 <TrendingUp size={18} className="inline mr-2" />
                                 My Investments

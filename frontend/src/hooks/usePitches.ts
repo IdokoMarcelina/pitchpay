@@ -1,16 +1,18 @@
 import { useState, useEffect, useCallback } from 'react';
-import { api, type Pitch, type PaginatedResponse, type PitchCategory } from '../lib/api';
+import { api, type Pitch, type PaginatedResponse } from '../lib/api';
 
 interface UsePitchesOptions {
   page?: number;
   limit?: number;
   search?: string;
-  category?: PitchCategory | 'All';
-  sort?: 'recent' | 'trending' | 'oldest';
+  category?: string;
+  sort?: string;
+  founder?: string;
+  user?: string;
   autoFetch?: boolean;
 }
 
-export function usePitches({ page = 1, limit = 10, search, category, sort = 'recent', autoFetch = true }: UsePitchesOptions = {}) {
+export function usePitches({ page = 1, limit = 10, search, category, sort = 'recent', founder, user, autoFetch = true }: UsePitchesOptions = {}) {
   const [pitches, setPitches] = useState<Pitch[]>([]);
   const [pagination, setPagination] = useState<PaginatedResponse<Pitch>['pagination'] | null>(null);
   const [isLoading, setIsLoading] = useState(false);
@@ -20,7 +22,7 @@ export function usePitches({ page = 1, limit = 10, search, category, sort = 'rec
     setIsLoading(true);
     setError(null);
     try {
-      const response = await api.getPitches(pageNum, limit, search, category, sort);
+      const response = await api.getPitches(pageNum, limit, search, category, sort, founder, user);
       setPitches(response.data);
       setPagination(response.pagination);
     } catch (err: unknown) {

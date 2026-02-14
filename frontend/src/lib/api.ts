@@ -94,8 +94,8 @@ async function fetchApi<T>(
 
 export const api = {
   // Pitches
-  getPitches: (page = 1, limit = 10, search?: string, category?: string, sort?: string) =>
-    fetchApi<PaginatedResponse<Pitch>>(`/pitches?page=${page}&limit=${limit}${search ? `&search=${encodeURIComponent(search)}` : ''}${category ? `&category=${encodeURIComponent(category)}` : ''}${sort ? `&sort=${sort}` : ''}`),
+  getPitches: (page = 1, limit = 10, search?: string, category?: string, sort?: string, founder?: string, user?: string) =>
+    fetchApi<PaginatedResponse<Pitch>>(`/pitches?page=${page}&limit=${limit}${search ? `&search=${encodeURIComponent(search)}` : ''}${category ? `&category=${encodeURIComponent(category)}` : ''}${sort ? `&sort=${sort}` : ''}${founder ? `&founder=${encodeURIComponent(founder)}` : ''}${user ? `&user=${encodeURIComponent(user)}` : ''}`),
 
   getPitch: (id: string) =>
     fetchApi<Pitch>(`/pitches/${id}`),

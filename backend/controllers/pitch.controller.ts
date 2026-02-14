@@ -53,9 +53,25 @@ export class PitchController {
 
             const search = req.query.search as string;
             const category = req.query.category as string;
+            const founder = req.query.founder as string;
+            const user = req.query.user as string;
             const sort = req.query.sort as string || 'recent';
 
-            const query: any = { status: { $in: ['PAID', 'VERIFIED'] } };
+            let query: any = {};
+
+            if (user) {
+                // Dashboard mode: show anything founded by user (any status) 
+                // OR anything invested in by user
+                query.$or = [
+                    { founder: { $regex: new RegExp(`^${user}$`, 'i') } },
+                    { 'investments.investor': { $regex: new RegExp(`^${user}$`, 'i') } }
+                ];
+            } else if (founder) {
+                query.founder = { $regex: new RegExp(`^${founder}$`, 'i') };
+            } else {
+                // Public explorer mode: only show paid/verified
+                query.status = { $in: ['PAID', 'VERIFIED'] };
+            }
 
             if (search) {
                 query.$or = [
