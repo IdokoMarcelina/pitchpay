@@ -29,13 +29,14 @@ export class PitchController {
             const id = req.params.id as string;
             const { txid } = req.body;
 
-            const verifiedPitch = await X402Service.verifyPayment(id, txid);
+            const result = await X402Service.verifyPayment(id, txid);
 
-            if (verifiedPitch) {
-                res.json({ message: 'Payment verified', pitch: verifiedPitch });
+            if (result.success) {
+                res.json({ message: 'Payment verified', pitch: result.pitch, status: result.status });
             } else {
                 res.status(400).json({
-                    error: 'Payment verification failed or pending',
+                    error: result.error || 'Payment verification failed or pending',
+                    status: result.status
                 });
             }
         } catch (error) {
@@ -179,7 +180,7 @@ export class PitchController {
                 return res.status(400).json({ error: 'Pitch already boosted' });
             }
 
-            const paymentDetails = await X402Service.getBoostPaymentDetails(pitch.pitchIdHash);
+            const paymentDetails = await X402Service.getBoostPaymentDetails(pitch._id.toString(), pitch.pitchIdHash);
             return res.status(402).json(paymentDetails);
         } catch (error) {
             console.error('Error in boostPitch:', error);
@@ -196,13 +197,14 @@ export class PitchController {
                 return res.status(400).json({ error: 'Missing TXID' });
             }
 
-            const verifiedPitch = await X402Service.verifyBoostPayment(id, txid);
+            const result = await X402Service.verifyBoostPayment(id, txid);
 
-            if (verifiedPitch) {
-                res.json({ message: 'Boost verified', pitch: verifiedPitch });
+            if (result.success) {
+                res.json({ message: 'Boost verified', pitch: result.pitch, status: result.status });
             } else {
                 res.status(400).json({
-                    error: 'Boost verification failed or pending',
+                    error: result.error || 'Boost verification failed or pending',
+                    status: result.status
                 });
             }
         } catch (error) {
@@ -253,7 +255,7 @@ export class PitchController {
             }
 
             const amountMicroSTX = amount ? amount * 1000000 : null;
-            const paymentDetails = await X402Service.getInvestmentPaymentDetails(pitch.pitchIdHash, amountMicroSTX);
+            const paymentDetails = await X402Service.getInvestmentPaymentDetails(pitch._id.toString(), pitch.pitchIdHash, amountMicroSTX);
             return res.status(402).json(paymentDetails);
         } catch (error) {
             console.error('Error in investPitch:', error);
@@ -270,13 +272,14 @@ export class PitchController {
                 return res.status(400).json({ error: 'Missing TXID' });
             }
 
-            const verified = await X402Service.verifyInvestmentPayment(id, txid, investor, amount);
+            const result = await X402Service.verifyInvestmentPayment(id, txid, investor, amount);
 
-            if (verified) {
-                res.json({ message: 'Investment verified' });
+            if (result.success) {
+                res.json({ message: 'Investment verified', status: result.status });
             } else {
                 res.status(400).json({
-                    error: 'Investment verification failed or pending',
+                    error: result.error || 'Investment verification failed or pending',
+                    status: result.status
                 });
             }
         } catch (error) {

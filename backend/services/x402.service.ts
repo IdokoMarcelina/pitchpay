@@ -76,70 +76,63 @@ export class X402Service {
     static async verifyPayment(pitchId: string, txid: string) {
         logger.info('Verifying payment', { pitchId, txid });
         const tx = (await StacksService.verifyTransaction(txid)) as any;
-        logger.info('Transaction status', { txid, status: tx?.tx_status, type: tx?.tx_type });
 
-        if (tx && (tx.tx_status === 'success' || tx.tx_status === 'pending')) {
+        if (!tx) return { success: false, error: 'Transaction not found or Hiro API error' };
+
+        logger.info('Transaction status', { txid, status: tx.tx_status, type: tx.tx_type });
+
+        if (tx.tx_status === 'success' || tx.tx_status === 'pending') {
             // Basic validation for pending tx
             if (tx.tx_status === 'pending') {
                 const contractId = getContractId();
-                logger.info('Validating pending tx', { contractId });
                 if (tx.tx_type !== 'contract_call' ||
                     tx.contract_call.contract_id !== contractId ||
                     tx.contract_call.function_name !== 'pay-for-pitch') {
-                    logger.warn('Pending validation failed', {
-                        type: tx.tx_type,
-                        target_contract: tx.contract_call?.contract_id,
-                        target_func: tx.contract_call?.function_name
-                    });
-                    return null;
+                    return { success: false, error: 'Invalid transaction type or target' };
                 }
             }
 
             const pitch = await Pitch.findById(pitchId);
-            if (!pitch) {
-                logger.error('Pitch not found in database', { pitchId });
-                return null;
-            }
+            if (!pitch) return { success: false, error: 'Pitch not found' };
 
             const onChainData = await StacksService.getPitchOnChain(pitch.pitchIdHash);
 
             if (onChainData && onChainData.founder === pitch.founder) {
                 pitch.status = 'VERIFIED';
             } else if (tx.tx_status === 'success') {
-                // Transaction succeeded but record not yet on-chain (indexing lag)
                 pitch.status = 'PAID';
             } else {
-                // Transaction is pending, don't update status to PAID yet
-                // But return the pitch so the frontend knows verification is in progress
-                return pitch;
+                return { success: true, status: 'pending', pitch };
             }
 
             pitch.txid = txid;
             await pitch.save();
-            return pitch;
+            return { success: true, status: tx.tx_status, pitch };
         }
 
-        return null;
+        return {
+            success: false,
+            status: tx.tx_status,
+            error: tx.tx_status === 'abort_by_post_condition' ? 'Transaction aborted by post-condition' : `Transaction failed: ${tx.tx_status}`
+        };
     }
 
     static async verifyBoostPayment(pitchId: string, txid: string) {
         logger.info('Verifying boost payment', { pitchId, txid });
         const tx = (await StacksService.verifyTransaction(txid)) as any;
-        logger.info('Boost transaction status', { txid, status: tx?.tx_status, type: tx?.tx_type });
 
-        if (tx && (tx.tx_status === 'success' || tx.tx_status === 'pending')) {
+        if (!tx) return { success: false, error: 'Transaction not found or Hiro API error' };
+
+        logger.info('Boost transaction status', { txid, status: tx.tx_status, type: tx.tx_type });
+
+        if (tx.tx_status === 'success' || tx.tx_status === 'pending') {
             // Basic validation for pending tx
             if (tx.tx_status === 'pending') {
                 const contractId = getContractId();
                 if (tx.tx_type !== 'contract_call' ||
                     tx.contract_call.contract_id !== contractId ||
                     tx.contract_call.function_name !== 'pay-for-boost') {
-                    logger.warn('Boost pending validation failed', {
-                        type: tx.tx_type,
-                        target_contract: tx.contract_call?.contract_id,
-                        target_func: tx.contract_call?.function_name
-                    });
-                    return null;
+                    return { success: false, error: 'Invalid boost transaction' };
                 }
             }
 
@@ -152,12 +145,16 @@ export class X402Service {
                     pitch.isBoosted = true;
                     await pitch.save();
                 }
-                // Return pitch even if indexing is not complete, as long as tx is pending/success
-                return pitch;
+                return { success: true, status: tx.tx_status, pitch };
             }
+            return { success: false, error: 'Pitch not found' };
         }
 
-        return null;
+        return {
+            success: false,
+            status: tx.tx_status,
+            error: tx.tx_status === 'abort_by_post_condition' ? 'Boost transaction aborted (possibly pitch not on-chain)' : `Boost transaction failed: ${tx.tx_status}`
+        };
     }
 
     static async syncWithOnChain(pitchId: string) {
@@ -176,7 +173,19 @@ export class X402Service {
                     pitch.txid = undefined;
                     await pitch.save();
                     return { synced: true, updated: true, newStatus: 'PENDING', reason: 'transaction_failed' };
+                } else if (!tx) {
+                    // Hiro 404 could mean many things, but if it's been PAID for a while and not on-chain, it's safer to allow re-sync
+                    logger.warn('Transaction not found on-chain, and not in Hiro index. Resetting to PENDING for recovery.', { pitchId, txid: pitch.txid });
+                    pitch.status = 'PENDING';
+                    pitch.txid = undefined;
+                    await pitch.save();
+                    return { synced: true, updated: true, newStatus: 'PENDING', reason: 'transaction_missing' };
                 }
+            } else if (pitch.status === 'PAID') {
+                // Marked as PAID but no TXID? Definitely inconsistent.
+                pitch.status = 'PENDING';
+                await pitch.save();
+                return { synced: true, updated: true, newStatus: 'PENDING', reason: 'inconsistent_state' };
             }
             return { synced: false, reason: 'not_on_chain' };
         }
@@ -204,7 +213,7 @@ export class X402Service {
         return { synced: true, updated, onChainData };
     }
 
-    static async getBoostPaymentDetails(pitchIdHash: string) {
+    static async getBoostPaymentDetails(pitchId: string, pitchIdHash: string) {
         const { boostFee } = await getCachedFees();
 
         return {
@@ -218,11 +227,12 @@ export class X402Service {
                     function: 'pay-for-boost',
                     args: [`0x${pitchIdHash}`],
                 },
+                internal_id: pitchId,
             },
         };
     }
 
-    static async getInvestmentPaymentDetails(pitchIdHash: string, amountMicroSTX: number | null) {
+    static async getInvestmentPaymentDetails(pitchId: string, pitchIdHash: string, amountMicroSTX: number | null) {
         const { pitchFee } = await getCachedFees();
         const amount = amountMicroSTX || pitchFee;
 
@@ -237,6 +247,7 @@ export class X402Service {
                     function: 'invest-in-pitch',
                     args: [`0x${pitchIdHash}`, amount.toString()],
                 },
+                internal_id: pitchId,
             },
         };
     }
@@ -244,51 +255,57 @@ export class X402Service {
     static async verifyInvestmentPayment(pitchId: string, txid: string, investor?: string, amount?: number) {
         logger.info('Verifying investment payment', { pitchId, txid, investor, amount });
         const tx = (await StacksService.verifyTransaction(txid)) as any;
-        logger.info('Investment transaction status', { txid, status: tx?.tx_status, type: tx?.tx_type });
 
-        if (tx && (tx.tx_status === 'success' || tx.tx_status === 'pending')) {
+        if (!tx) return { success: false, error: 'Transaction not found or Hiro API error' };
+
+        logger.info('Investment transaction status', { txid, status: tx.tx_status, type: tx.tx_type });
+
+        if (tx.tx_status === 'success' || tx.tx_status === 'pending') {
             // Basic validation for pending tx
             if (tx.tx_status === 'pending') {
                 const contractId = getContractId();
                 if (tx.tx_type !== 'contract_call' ||
                     tx.contract_call.contract_id !== contractId ||
                     tx.contract_call.function_name !== 'invest-in-pitch') {
-                    logger.warn('Investment pending validation failed', {
-                        type: tx.tx_type,
-                        target_contract: tx.contract_call?.contract_id,
-                        target_func: tx.contract_call?.function_name
-                    });
-                    return null;
+                    return { success: false, error: 'Invalid investment transaction' };
                 }
             }
 
             if (investor && amount) {
                 const pitch = await Pitch.findById(pitchId);
                 if (pitch) {
-                    pitch.investments.push({
-                        investor: investor.toLowerCase(),
-                        amount,
-                        txid,
-                        createdAt: new Date()
-                    } as any);
+                    // Check if this txid already added to avoid duplicates
+                    const alreadyInvested = pitch.investments.some(inv => inv.txid === txid);
+                    if (!alreadyInvested) {
+                        pitch.investments.push({
+                            investor: investor.toLowerCase(),
+                            amount,
+                            txid,
+                            createdAt: new Date()
+                        } as any);
 
-                    pitch.notifications.push({
-                        type: 'investment',
-                        from: investor.toLowerCase(),
-                        pitchId: pitch._id.toString(),
-                        pitchTitle: pitch.title,
-                        amount,
-                        txid,
-                        read: false,
-                        createdAt: new Date()
-                    } as any);
+                        pitch.notifications.push({
+                            type: 'investment',
+                            from: investor.toLowerCase(),
+                            pitchId: pitch._id.toString(),
+                            pitchTitle: pitch.title,
+                            amount,
+                            txid,
+                            read: false,
+                            createdAt: new Date()
+                        } as any);
 
-                    await pitch.save();
+                        await pitch.save();
+                    }
                 }
             }
-            return true;
+            return { success: true, status: tx.tx_status };
         }
 
-        return false;
+        return {
+            success: false,
+            status: tx.tx_status,
+            error: tx.tx_status === 'abort_by_post_condition' ? 'Investment transaction aborted' : `Investment transaction failed: ${tx.tx_status}`
+        };
     }
 }
