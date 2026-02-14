@@ -39,13 +39,13 @@ function clearAuth(): void {
 
 export const wallet = {
   async connect(): Promise<WalletSession> {
-    console.log('Initiating wallet connection via @stacks/connect...');
+    console.log('Initiating wallet connection...');
     try {
+      console.log('Calling @stacks/connect connect({ network: "testnet" })...');
       const result = await connect({
         network: 'testnet',
       });
-
-      console.log('Wallet connection result:', result);
+      console.log('Connect successful. Addresses:', result.addresses);
 
       const stxAddress = result.addresses.find(a => a.address.startsWith('ST'))?.address
         || result.addresses[0]?.address;
@@ -75,7 +75,7 @@ export const wallet = {
     // Check @stacks/connect standard storage if available
     if (isConnected()) {
       const storage = getLocalStorage();
-      const address = storage.addresses?.[0]?.address;
+      const address = storage?.addresses?.stx?.[0]?.address;
       if (address) {
         currentAddress = address;
         return true;
@@ -95,7 +95,7 @@ export const wallet = {
 
     if (isConnected()) {
       const storage = getLocalStorage();
-      const address = storage.addresses?.[0]?.address;
+      const address = storage?.addresses?.stx?.[0]?.address;
       if (address) {
         currentAddress = address;
         return address;

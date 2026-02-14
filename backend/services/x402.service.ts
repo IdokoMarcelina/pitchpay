@@ -284,22 +284,14 @@ export class X402Service {
         logger.info('Investment transaction status', { txid, status: tx.tx_status, type: tx.tx_type });
 
         if (tx.tx_status === 'success' || tx.tx_status === 'pending') {
-            // Basic validation for pending tx
-            if (tx.tx_status === 'pending') {
-                const contractId = getContractId();
-                if (tx.tx_type !== 'contract_call' ||
-                    tx.contract_call.contract_id !== contractId ||
-                    tx.contract_call.function_name !== 'invest-in-pitch') {
-                    return { success: false, error: 'Invalid investment transaction' };
-                }
-            }
-
             if (investor && amount) {
                 const pitch = await Pitch.findById(pitchId);
                 if (pitch) {
                     // Check if this txid already added to avoid duplicates
                     const alreadyInvested = pitch.investments.some(inv => inv.txid === txid);
-                    if (!alreadyInvested) {
+
+                    if (!alreadyInvested && tx.tx_status === 'success') {
+                        // Only add to DB if transaction is SUCCESSFUL (confirmed on-chain)
                         pitch.investments.push({
                             investor: investor.toLowerCase(),
                             amount,
@@ -319,6 +311,9 @@ export class X402Service {
                         } as any);
 
                         await pitch.save();
+                        return { success: true, status: tx.tx_status, message: 'Investment verified and recorded' };
+                    } else if (!alreadyInvested && tx.tx_status === 'pending') {
+                        return { success: true, status: tx.tx_status, message: 'Investment transaction pending' };
                     }
                 }
             }

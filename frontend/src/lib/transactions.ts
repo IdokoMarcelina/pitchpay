@@ -5,6 +5,7 @@ import {
   bufferCV,
   uintCV,
 } from '@stacks/transactions';
+import { STACKS_TESTNET } from '@stacks/network';
 
 const CONTRACT_ADDRESS = import.meta.env.VITE_CONTRACT_ADDRESS || 'ST1Z0AQZHXW508XB03EWKH6KK90A0T084DTD8DPTG';
 const CONTRACT_NAME = 'pitchpay_clar';
@@ -16,11 +17,7 @@ export interface TransactionResult {
 
 function hexToBytes(hex: string): Uint8Array {
   const cleanHex = hex.startsWith('0x') ? hex.slice(2) : hex;
-  const bytes = new Uint8Array(cleanHex.length / 2);
-  for (let i = 0; i < cleanHex.length; i += 2) {
-    bytes[i / 2] = parseInt(cleanHex.substring(i, i + 2), 16);
-  }
-  return bytes;
+  return Buffer.from(cleanHex, 'hex');
 }
 
 export async function makeContractCall(
@@ -28,25 +25,33 @@ export async function makeContractCall(
   functionArgs: any[],
   postConditions: any[] = []
 ): Promise<TransactionResult> {
+  console.log('makeContractCall called for:', functionName, { functionArgs, postConditions });
   return new Promise((resolve, reject) => {
-    openContractCall({
-      contractAddress: CONTRACT_ADDRESS,
-      contractName: CONTRACT_NAME,
-      functionName,
-      functionArgs,
-      postConditions,
-      postConditionMode: PostConditionMode.Deny,
-      network: 'testnet',
-      onFinish: (data) => {
-        resolve({
-          txid: data.txId,
-          success: true,
-        });
-      },
-      onCancel: () => {
-        reject(new Error('User cancelled transaction'));
-      },
-    });
+    try {
+      openContractCall({
+        contractAddress: CONTRACT_ADDRESS,
+        contractName: CONTRACT_NAME,
+        functionName,
+        functionArgs,
+        postConditions,
+        postConditionMode: PostConditionMode.Deny,
+        network: STACKS_TESTNET,
+        onFinish: (data) => {
+          console.log('Contract call finished:', data);
+          resolve({
+            txid: data.txId,
+            success: true,
+          });
+        },
+        onCancel: () => {
+          console.log('Contract call cancelled by user');
+          reject(new Error('User cancelled transaction'));
+        },
+      });
+    } catch (err) {
+      console.error('Error during openContractCall initiation:', err);
+      reject(err);
+    }
   });
 }
 
@@ -65,13 +70,20 @@ export async function payForBoost(pitchIdHash: string, userAddress: string, amou
 }
 
 export async function payForInvestment(pitchIdHash: string, amount: string, userAddress: string): Promise<TransactionResult> {
-  const amountInt = parseInt(amount);
+  console.log('Preparing investment transaction:', { pitchIdHash, amount, userAddress });
+  const amountInt = BigInt(amount);
   const postConditions = [
     Pc.principal(userAddress).willSendEq(amountInt).ustx()
   ];
+
+  console.log('Contract Args:', [
+    `Buffer: ${pitchIdHash}`,
+    `Uint: ${amountInt.toString()}`
+  ]);
+
   return makeContractCall('invest-in-pitch', [
     bufferCV(hexToBytes(pitchIdHash)),
-    uintCV(amount)
+    uintCV(amountInt)
   ], postConditions);
 }
 

@@ -40,6 +40,7 @@ const PitchDetail: React.FC = () => {
         try {
             const details = await api.investPitch(pitch._id, investAmount);
             setPaymentDetails(details);
+            setIsInvesting(false);
         } catch (err: unknown) {
             setInvestError((err as Error).message || 'Failed to initiate investment');
             setIsInvesting(false);
@@ -56,7 +57,11 @@ const PitchDetail: React.FC = () => {
             const pitchIdHash = paymentDetails.payment_details.contract_call.args[0].replace('0x', '');
             const amount = paymentDetails.payment_details.contract_call.args[1];
 
+            console.log('Submitting investment with:', { pitchIdHash, amount, address });
+
             const result: TransactionResult = await payForInvestment(pitchIdHash, amount, address);
+
+            console.log('Investment transaction broadcasted. Tx ID:', result.txid);
 
             if (result.success && result.txid) {
                 setPendingTxid(result.txid);
@@ -242,7 +247,25 @@ const PitchDetail: React.FC = () => {
                                     <TrendingUp size={40} />
                                 </div>
                                 <h3 className="font-bold text-xl mb-2">Invest in this Startup</h3>
-                                <p className="text-white/40 text-sm">Support this founder directly with STX tokens.</p>
+                                <p className="text-white/40 text-sm mb-6">Support this founder directly with STX tokens.</p>
+
+                                <div className="p-4 bg-white/5 rounded-2xl border border-white/10 mb-6 text-left">
+                                    <div className="flex justify-between items-end mb-2">
+                                        <div className="text-[10px] text-white/40 uppercase tracking-widest font-bold">Total Raised</div>
+                                        <div className="text-lg font-bold text-green-400">
+                                            {((pitch.investments?.reduce((sum, i) => sum + i.amount, 0) || 0) / 1000000).toFixed(2)} STX
+                                        </div>
+                                    </div>
+                                    <div className="w-full bg-white/10 h-1.5 rounded-full overflow-hidden">
+                                        <div
+                                            className="bg-brand-accent h-full rounded-full transition-all duration-1000"
+                                            style={{ width: `${Math.min(100, ((pitch.investments?.reduce((sum, i) => sum + i.amount, 0) || 0) / 1000000) * 10)}%` }}
+                                        />
+                                    </div>
+                                    <div className="text-[9px] text-center text-white/20 mt-3 font-medium uppercase tracking-tighter">
+                                        Community Backed
+                                    </div>
+                                </div>
                             </div>
 
                             <div className="space-y-4">
@@ -387,12 +410,14 @@ const PitchDetail: React.FC = () => {
                         {investSuccess ? (
                             <div className="text-center py-8">
                                 <div className="w-16 h-16 bg-green-500/20 rounded-full flex items-center justify-center mx-auto mb-4">
-                                    <TrendingUp size={32} className="text-green-400" />
+                                    <CheckCircle size={32} className="text-green-400" />
                                 </div>
-                                <h4 className="font-bold text-xl mb-2">Investment Successful!</h4>
-                                <p className="text-white/60 mb-6">Thank you for supporting this startup.</p>
-                                <Button variant="primary" onClick={() => setShowInvestModal(false)}>
-                                    Close
+                                <h4 className="font-bold text-xl mb-2">Investment Broadcasted!</h4>
+                                <p className="text-white/60 mb-6 text-sm">
+                                    Your transaction has been sent to the network. It will appear on-chain shortly.
+                                </p>
+                                <Button variant="primary" onClick={() => { setShowInvestModal(false); setInvestSuccess(false); setPendingTxid(null); refreshPitch(); }}>
+                                    Back to Pitch
                                 </Button>
                             </div>
                         ) : paymentDetails ? (

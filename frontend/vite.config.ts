@@ -8,6 +8,9 @@ export default defineConfig({
     react(),
     tailwindcss(),
   ],
+  define: {
+    global: 'globalThis',
+  },
   build: {
     chunkSizeWarningLimit: 1000,
     rollupOptions: {
