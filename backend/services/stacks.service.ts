@@ -7,9 +7,11 @@ import {
     cvToJSON,
 } from '@stacks/transactions';
 import * as crypto from 'crypto';
-import fetch from 'node-fetch';
 import AuthSession from '../models/AuthSession';
 import logger from '../middleware/logger';
+
+// Cross-environment fetch support
+const _fetch = typeof fetch !== 'undefined' ? fetch : require('node-fetch');
 
 const network = STACKS_TESTNET;
 
@@ -28,16 +30,32 @@ const NONCE_EXPIRY_MINUTES = 5;
 
 const flattenCV = (cvJson: any): any => {
     if (!cvJson) return null;
+
+    // Handle wrapped types: responses (ok/err) and optionals (some)
+    if (cvJson.type && (
+        cvJson.type.startsWith('(ok ') ||
+        cvJson.type.startsWith('(err ') ||
+        cvJson.type === 'some'
+    )) {
+        return flattenCV(cvJson.value);
+    }
+
+    if (cvJson.type === 'none') return null;
+
     if (cvJson.type === 'uint' || cvJson.type === 'int') return parseInt(cvJson.value);
     if (cvJson.type === 'bool') return cvJson.value;
     if (cvJson.type === 'principal' || cvJson.type === 'buff') return cvJson.value;
-    if (cvJson.type.startsWith('(tuple')) {
+
+    if (cvJson.type && cvJson.type.startsWith('(tuple')) {
         const result: any = {};
-        for (const [key, val] of Object.entries(cvJson.value)) {
-            result[key] = flattenCV(val);
+        if (cvJson.value && typeof cvJson.value === 'object') {
+            for (const [key, val] of Object.entries(cvJson.value)) {
+                result[key] = flattenCV(val);
+            }
         }
         return result;
     }
+
     return cvJson.value;
 };
 
@@ -188,13 +206,15 @@ export class StacksService {
     static async getUserReceipts(address: string) {
         try {
             const contractId = `${CONTRACT_ADDRESS}.${CONTRACT_NAME}`;
-            const response = await fetch(`${STACKS_API_URL}/extended/v1/address/${address}/nft_events?limit=50`);
+            const response = await _fetch(`${STACKS_API_URL}/extended/v1/address/${address}/nft_events?limit=50`);
             const data = await response.json() as any;
+
+            if (!data.nft_events) return [];
 
             // Filter for investment-receipt mint events from our contract
             const events = data.nft_events.filter((e: any) =>
                 e.asset_identifier === `${contractId}::investment-receipt` &&
-                e.recipient === address
+                e.recipient.toLowerCase() === address.toLowerCase()
             );
 
             const receipts = await Promise.all(events.map(async (e: any) => {
@@ -203,13 +223,13 @@ export class StacksService {
                 return {
                     receiptId,
                     txid: e.tx_id,
-                    ...metadata
+                    ...(typeof metadata === 'object' ? metadata : { rawMetadata: metadata })
                 };
             }));
 
             return receipts;
         } catch (error) {
-            console.error('Error fetching user receipts:', error);
+            logger.error('Error fetching user receipts:', error);
             return [];
         }
     }

@@ -1,6 +1,7 @@
 import { Request, Response } from 'express';
 import Pitch from '../models/Pitch';
 import { X402Service } from '../services/x402.service';
+import { StacksService } from '../services/stacks.service';
 import { validateRequest } from '../middleware/error.middleware';
 import { createPitchSchema, verifyPitchSchema, updatePitchSchema } from '../validators/pitch.validator';
 

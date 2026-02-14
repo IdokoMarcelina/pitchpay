@@ -748,3 +748,9 @@
 {"timestamp":"2026-02-14T20:38:33.245Z","level":"info","message":"Server started","port":3000}
 {"timestamp":"2026-02-14T20:38:50.560Z","level":"info","message":"Connected to MongoDB"}
 {"timestamp":"2026-02-14T20:38:50.565Z","level":"info","message":"Server started","port":3000}
+{"timestamp":"2026-02-14T20:48:42.678Z","level":"info","message":"Connected to MongoDB"}
+{"timestamp":"2026-02-14T20:48:42.691Z","level":"info","message":"Server started","port":3000}
+{"timestamp":"2026-02-14T20:48:49.661Z","level":"info","message":"HTTP request","requestId":"1256e93a19b59260","method":"GET","path":"/users/ST2FY75TNSXVGTTB80BJMNHR9KYQPVWHAT4H4MYET","statusCode":500,"duration":"22ms","ip":"::1","userAgent":"curl/8.17.0"}
+{"timestamp":"2026-02-14T20:49:13.557Z","level":"info","message":"Connected to MongoDB"}
+{"timestamp":"2026-02-14T20:49:13.563Z","level":"info","message":"Server started","port":3000}
+{"timestamp":"2026-02-14T20:49:20.658Z","level":"info","message":"HTTP request","requestId":"b8a77fbdb58b94a4","method":"GET","path":"/users/ST2FY75TNSXVGTTB80BJMNHR9KYQPVWHAT4H4MYET","statusCode":200,"duration":"2073ms","ip":"::1","userAgent":"curl/8.17.0"}
