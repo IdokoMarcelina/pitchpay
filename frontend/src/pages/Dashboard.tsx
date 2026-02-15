@@ -188,8 +188,11 @@ const Dashboard: React.FC = () => {
                             investedPitches.length > 0 ? (
                                 <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
                                     {investedPitches.map(pitch => {
-                                        const userInvestments = pitch.investments?.filter(i => i.investor.toLowerCase() === address?.toLowerCase()) || [];
-                                        const investedAmount = userInvestments.reduce((s, i) => s + i.amount, 0);
+                                        const investorAddress = address?.toLowerCase() || '';
+                                        const userInvestments = pitch.investments?.filter(i =>
+                                            i.investor && i.investor.toLowerCase() === investorAddress
+                                        ) || [];
+                                        const investedAmount = userInvestments.reduce((s, i) => s + (i.amount || 0), 0);
                                         return (
                                             <Link key={pitch._id} to={`/pitch/${pitch._id}`}>
                                                 <div className="glass rounded-2xl p-6 border-brand-accent/30 bg-brand-accent/5">
@@ -229,7 +232,13 @@ const Dashboard: React.FC = () => {
                                                     <span className="text-xs font-mono text-white/40">#{receipt.receiptId}</span>
                                                 </div>
                                                 <h4 className="text-lg font-bold mb-1">Investment Receipt</h4>
-                                                <p className="text-2xl font-black text-white mb-4">{(receipt.amount / 1000000).toFixed(2)} STX</p>
+                                                <p className="text-2xl font-black text-white mb-4">
+                                                    {receipt.amount ? (
+                                                        receipt.amount > 100000000 // Heuristic for sBTC sats vs STX micro
+                                                            ? `${(receipt.amount / 100000000).toFixed(4)} sBTC`
+                                                            : `${(receipt.amount / 1000000).toFixed(2)} STX`
+                                                    ) : 'Metadata Pending'}
+                                                </p>
                                                 <div className="pt-4 border-t border-white/10 space-y-2">
                                                     <div className="flex justify-between text-[10px] uppercase tracking-wider">
                                                         <span className="text-white/40">Status</span>

@@ -5,7 +5,8 @@ import Button from './Button';
 import type { Pitch } from '../lib/api';
 
 const PitchCard: React.FC<{ pitch: Pitch }> = ({ pitch }) => {
-    const formatAddress = (addr: string) => {
+    const formatAddress = (addr: string | undefined | null) => {
+        if (!addr) return '...';
         return `${addr.slice(0, 6)}...${addr.slice(-4)}`;
     };
 
@@ -14,7 +15,7 @@ const PitchCard: React.FC<{ pitch: Pitch }> = ({ pitch }) => {
         const now = new Date();
         const diff = now.getTime() - date.getTime();
         const days = Math.floor(diff / (1000 * 60 * 60 * 24));
-        
+
         if (days === 0) return 'Today';
         if (days === 1) return 'Yesterday';
         if (days < 7) return `${days} days ago`;

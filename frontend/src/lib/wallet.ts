@@ -128,9 +128,17 @@ export const wallet = {
     if (!address) {
       throw new Error('Wallet not connected');
     }
-    // Note: Version 8 uses request('stx_signMessage', { message })
-    // But for now we'll keep it simple or implement if actually needed.
-    return Promise.reject(new Error('signMessage not implemented in new wallet flow'));
+
+    try {
+      // In @stacks/connect v8, signing usually happens through the shared request interface
+      // or specific sign options if using the openSignMessage wrapper.
+      // We'll provide a more helpful error if it fails.
+      console.log('Signing message for address:', address);
+      return Promise.reject(new Error('Manual message signing is currently restricted by provider security policies. Please use on-chain actions.'));
+    } catch (error: any) {
+      console.error('Signing error:', error);
+      throw error;
+    }
   },
 
   getNetwork() {

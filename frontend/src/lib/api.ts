@@ -78,19 +78,27 @@ async function fetchApi<T>(
     },
   };
 
-  const response = await fetch(url, config);
+  try {
+    const response = await fetch(url, config);
 
-  if (response.status === 402) {
-    const data = await response.json();
-    return data as T;
+    if (response.status === 402) {
+      const data = await response.json();
+      return data as T;
+    }
+
+    if (!response.ok) {
+      const error = await response.json().catch(() => ({ error: 'Unknown error' }));
+      console.error(`API Error [${response.status}] for ${endpoint}:`, error);
+      throw new ApiError(error.error || 'Request failed', response.status);
+    }
+
+    return response.json();
+  } catch (err: any) {
+    if (err.name === 'TypeError' && err.message === 'Failed to fetch') {
+      console.error(`Network Connection Failure for ${endpoint}. Possible backend drop (Render).`);
+    }
+    throw err;
   }
-
-  if (!response.ok) {
-    const error = await response.json().catch(() => ({ error: 'Unknown error' }));
-    throw new ApiError(error.error || 'Request failed', response.status);
-  }
-
-  return response.json();
 }
 
 export const api = {

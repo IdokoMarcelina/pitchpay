@@ -184,6 +184,28 @@ export class StacksService {
         }
     }
 
+    static async verifyFTTransfer(txid: string, tokenContract: string, amount: number, recipient: string) {
+        try {
+            const tx = await this.verifyTransaction(txid);
+            if (!tx || tx.tx_status !== 'success') return false;
+
+            // Check events for FT transfer
+            // Hiro API events for FT transfers are in tx.events
+            const transferEvent = tx.events?.find((e: any) =>
+                e.event_type === 'ft_transfer_event' &&
+                e.asset_event_type === 'transfer' &&
+                (e.asset_identifier || '').includes(tokenContract) &&
+                (e.ft_transfer_event?.recipient === recipient || e.ft_transfer_event?.recipient?.toLowerCase() === recipient.toLowerCase()) &&
+                parseInt(e.ft_transfer_event?.amount || '0') >= amount
+            );
+
+            return !!transferEvent;
+        } catch (error) {
+            logger.error('Error verifying FT transfer:', error);
+            return false;
+        }
+    }
+
     static async getPitchFee(): Promise<number | null> {
         try {
             const result = await fetchCallReadOnlyFunction({
@@ -239,24 +261,26 @@ export class StacksService {
 
     static async getUserReceipts(address: string) {
         try {
-            const contractId = `${CONTRACT_ADDRESS}.${CONTRACT_NAME}`;
-            const response = await _fetch(`${STACKS_API_URL}/extended/v1/address/${address}/nft_events?limit=50`);
+            const contractId = `${CONTRACT_ADDRESS}.${CONTRACT_NAME}`.toLowerCase();
+            const response = await _fetch(`${STACKS_API_URL}/extended/v1/address/${address}/nft_holdings?limit=50`);
             const data = await response.json() as any;
 
-            if (!data.nft_events) return [];
+            logger.info('NFT holdings fetched', { address, count: data.results?.length });
 
-            // Filter for investment-receipt mint events from our contract
-            const events = data.nft_events.filter((e: any) =>
-                e.asset_identifier === `${contractId}::investment-receipt` &&
-                e.recipient.toLowerCase() === address.toLowerCase()
+            if (!data.results) return [];
+
+            // Filter for investment-receipt tokens from our contract
+            const holdings = data.results.filter((h: any) =>
+                (h.asset_identifier || '').toLowerCase() === `${contractId}::investment-receipt`.toLowerCase()
             );
 
-            const receipts = await Promise.all(events.map(async (e: any) => {
-                const receiptId = parseInt(e.value.value);
+            const receipts = await Promise.all(holdings.map(async (h: any) => {
+                const rawValue = h.value?.value || h.nft_id?.value || h.value?.repr?.replace('u', '') || '0';
+                const receiptId = parseInt(rawValue);
                 const metadata = await this.getReceiptMetadata(receiptId);
                 return {
                     receiptId,
-                    txid: e.tx_id,
+                    txid: h.tx_id,
                     ...(typeof metadata === 'object' ? metadata : { rawMetadata: metadata })
                 };
             }));

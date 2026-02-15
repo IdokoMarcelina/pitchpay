@@ -277,19 +277,26 @@ export class X402Service {
     }
 
     static async getInvestmentPaymentDetails(pitchId: string, pitchIdHash: string, amountMicroSTX: number | null) {
+        const pitch = await Pitch.findById(pitchId);
+        if (!pitch) throw new Error('Pitch not found');
+
         const { pitchFee } = await getCachedFees();
         const amount = amountMicroSTX || pitchFee;
+        const isFT = pitch.currency === 'sBTC';
 
         return {
             status: 402,
-            message: `Investment Required: Send ${(amount / 1000000).toFixed(2)} STX to support this startup`,
+            message: `Investment Required: Send ${(amount / 1000000).toFixed(2)} ${pitch.currency} to support this startup`,
             payment_details: {
-                type: 'stacks',
+                type: isFT ? 'ft' : 'stacks',
+                currency: pitch.currency,
                 amount: amount,
                 contract_call: {
                     contract: getContractId(),
-                    function: 'invest-in-pitch',
-                    args: [`0x${pitchIdHash}`, amount.toString()],
+                    function: isFT ? 'invest-in-pitch-ft' : 'invest-in-pitch',
+                    args: isFT
+                        ? [`0x${pitchIdHash}`, amount.toString(), 'ST1F7QA2MDF17S807EPA36TSS8AMEFY4KA9TVGWXT.sbtc-token']
+                        : [`0x${pitchIdHash}`, amount.toString()],
                 },
                 internal_id: pitchId,
             },
