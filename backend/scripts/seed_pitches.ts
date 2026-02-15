@@ -46,6 +46,42 @@ const seedPitches = [
         isBoosted: true,
         logoUrl: 'https://api.dicebear.com/7.x/shapes/svg?seed=StackSwap',
         deckUrl: 'https://pitchpay.io/decks/StackSwap.pdf'
+    },
+    {
+        title: 'ZestPay: Merchant Loyalty on Stacks',
+        description: 'ZestPay enables merchants to launch powerful loyalty programs using SIP-010 tokens on Stacks. With real-time sBTC settlements and seamless Bitcoin integration, we bridge the gap between traditional retail and the Bitcoin economy.',
+        website: 'https://zestpay.biz',
+        category: 'Tools',
+        founder: SEED_ADDRESS,
+        currency: 'sBTC',
+        status: 'VERIFIED',
+        isBoosted: false,
+        logoUrl: 'https://api.dicebear.com/7.x/shapes/svg?seed=ZestPay',
+        deckUrl: 'https://pitchpay.io/decks/ZestPay.pdf'
+    },
+    {
+        title: 'NovaStream: Decentralized Content Hub',
+        description: 'NovaStream is a decentralized video platform where creators are paid instantly in sBTC. By leveraging Stacks smart contracts for rights management and IPFS for storage, we eliminate middlemen and maximize creator revenue.',
+        website: 'https://novastream.io',
+        category: 'Social',
+        founder: SEED_ADDRESS,
+        currency: 'sBTC',
+        status: 'VERIFIED',
+        isBoosted: true,
+        logoUrl: 'https://api.dicebear.com/7.x/shapes/svg?seed=NovaStream',
+        deckUrl: 'https://pitchpay.io/decks/NovaStream.pdf'
+    },
+    {
+        title: 'BitGuard: Multi-Sig for Bitcoin DAOs',
+        description: 'BitGuard provides institutional-grade multi-sig management for DAOs and organizations operating on the Stacks layer. Our intuitive dashboard makes treasury management safe, transparent, and fully decentralized.',
+        website: 'https://bitguard.security',
+        category: 'Infrastructure',
+        founder: SEED_ADDRESS,
+        currency: 'STX',
+        status: 'VERIFIED',
+        isBoosted: false,
+        logoUrl: 'https://api.dicebear.com/7.x/shapes/svg?seed=BitGuard',
+        deckUrl: 'https://pitchpay.io/decks/BitGuard.pdf'
     }
 ];
 

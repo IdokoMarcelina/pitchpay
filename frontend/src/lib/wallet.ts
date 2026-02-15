@@ -72,6 +72,12 @@ export const wallet = {
       throw new Error('No Stacks address found');
     } catch (error: any) {
       console.error('Connection error:', error);
+      if (error.message?.includes('StacksProvider') || error.message?.includes('redefine')) {
+        throw new Error('Wallet collision detected. Multiple Stacks extensions (Xverse & Leather) are conflicting. Please disable one or try a different browser.');
+      }
+      if (error.message?.includes('No provider found')) {
+        throw new Error('No Stacks wallet found. Please install Leather or Xverse.');
+      }
       throw error;
     }
   },

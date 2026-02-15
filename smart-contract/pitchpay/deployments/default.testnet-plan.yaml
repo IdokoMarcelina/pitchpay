@@ -9,7 +9,7 @@ plan:
     - id: 0
       transactions:
         - contract-publish:
-            contract-name: pitchpay_clar_v1
+            contract-name: pitchpay_clar_v2
             expected-sender: ST1Z0AQZHXW508XB03EWKH6KK90A0T084DTD8DPTG
             cost: 51120
             path: contracts/pitchpay_clar.clar

@@ -9,7 +9,7 @@ import {
 import { STACKS_TESTNET } from '@stacks/network';
 
 const CONTRACT_ADDRESS = import.meta.env.VITE_CONTRACT_ADDRESS || 'ST1Z0AQZHXW508XB03EWKH6KK90A0T084DTD8DPTG';
-const CONTRACT_NAME = import.meta.env.VITE_CONTRACT_NAME || 'pitchpay_clar_v1';
+const CONTRACT_NAME = import.meta.env.VITE_CONTRACT_NAME || 'pitchpay_clar_v2';
 const SBTC_CONTRACT = 'ST1F7QA2MDF17S807EPA36TSS8AMEFY4KA9TVGWXT.sbtc-token';
 
 export interface TransactionResult {

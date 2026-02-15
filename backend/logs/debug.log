@@ -808,3 +808,11 @@
 {"timestamp":"2026-02-15T01:24:23.338Z","level":"info","message":"Stacks Configuration:","CONTRACT_ADDRESS":"ST1Z0AQZHXW508XB03EWKH6KK90A0T084DTD8DPTG","CONTRACT_NAME":"pitchpay_clar_v1","STACKS_API_URL":"https://api.testnet.hiro.so"}
 {"timestamp":"2026-02-15T01:24:23.887Z","level":"info","message":"Connected to MongoDB"}
 {"timestamp":"2026-02-15T01:24:23.895Z","level":"info","message":"Server started","port":3000}
+{"timestamp":"2026-02-15T01:36:45.909Z","level":"info","message":"Stacks Service Configuration Initialized","CONTRACT_ADDRESS":"ST1Z0AQZHXW508XB03EWKH6KK90A0T084DTD8DPTG","CONTRACT_NAME":"pitchpay_clar_v2","STACKS_API_URL":"https://api.testnet.hiro.so"}
+{"timestamp":"2026-02-15T01:36:45.911Z","level":"info","message":"Stacks Configuration:","CONTRACT_ADDRESS":"ST1Z0AQZHXW508XB03EWKH6KK90A0T084DTD8DPTG","CONTRACT_NAME":"pitchpay_clar_v2","STACKS_API_URL":"https://api.testnet.hiro.so"}
+{"timestamp":"2026-02-15T01:36:46.536Z","level":"info","message":"Connected to MongoDB"}
+{"timestamp":"2026-02-15T01:36:46.545Z","level":"info","message":"Server started","port":3000}
+{"timestamp":"2026-02-15T01:38:18.725Z","level":"info","message":"Stacks Service Configuration Initialized","CONTRACT_ADDRESS":"ST1Z0AQZHXW508XB03EWKH6KK90A0T084DTD8DPTG","CONTRACT_NAME":"pitchpay_clar_v2","STACKS_API_URL":"https://api.testnet.hiro.so"}
+{"timestamp":"2026-02-15T01:38:18.726Z","level":"info","message":"Stacks Configuration:","CONTRACT_ADDRESS":"ST1Z0AQZHXW508XB03EWKH6KK90A0T084DTD8DPTG","CONTRACT_NAME":"pitchpay_clar_v2","STACKS_API_URL":"https://api.testnet.hiro.so"}
+{"timestamp":"2026-02-15T01:38:19.034Z","level":"info","message":"Connected to MongoDB"}
+{"timestamp":"2026-02-15T01:38:19.041Z","level":"info","message":"Server started","port":3000}

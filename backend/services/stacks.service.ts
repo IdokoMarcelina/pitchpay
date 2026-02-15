@@ -19,7 +19,7 @@ const CONTRACT_ADDRESS =
     (process.env.CONTRACT_ADDRESS ||
         'ST1Z0AQZHXW508XB03EWKH6KK90A0T084DTD8DPTG').trim();
 
-const CONTRACT_NAME = (process.env.CONTRACT_NAME || 'pitchpay_clar_v1').trim();
+const CONTRACT_NAME = (process.env.CONTRACT_NAME || 'pitchpay_clar_v2').trim();
 
 const STACKS_API_URL =
     (process.env.STACKS_API_URL || 'https://api.testnet.hiro.so').trim();
