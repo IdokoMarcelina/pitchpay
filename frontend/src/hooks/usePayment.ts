@@ -1,13 +1,13 @@
 import { useState, useCallback } from 'react';
 import { api, type PaymentDetails, type PitchCategory } from '../lib/api';
-import { payForPitch, payForBoost, type TransactionResult } from '../lib/transactions';
+import { payForBoost, type TransactionResult } from '../lib/transactions';
 
 export function usePayment() {
   const [isProcessing, setIsProcessing] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   const createPitchWithPayment = useCallback(async (
-    data: { title: string; description: string; website: string; founder: string; category?: PitchCategory; logoUrl?: string; deckUrl?: string },
+    data: { title: string; description: string; website: string; founder: string; currency: 'STX' | 'sBTC'; category?: PitchCategory; logoUrl?: string; deckUrl?: string },
     onPaymentRequired: (details: PaymentDetails) => void,
     onSuccess: () => void,
     onError: (error: string) => void
@@ -36,6 +36,7 @@ export function usePayment() {
     pitchIdHash: string,
     userAddress: string,
     amount: number,
+    currency: 'STX' | 'sBTC',
     onPending: (txid: string) => void,
     onSuccess: (txid: string) => void,
     onError: (error: string) => void
@@ -44,7 +45,10 @@ export function usePayment() {
     setError(null);
 
     try {
-      const result: TransactionResult = await payForPitch(pitchIdHash, userAddress, amount);
+      const { payForPitch, payForPitchFT } = await import('../lib/transactions');
+      const result = currency === 'sBTC'
+        ? await payForPitchFT(pitchIdHash, userAddress, amount)
+        : await payForPitch(pitchIdHash, userAddress, amount);
 
       if (result.success && result.txid) {
         onPending(result.txid);

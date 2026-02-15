@@ -18,6 +18,7 @@ const CreatePitch: React.FC = () => {
         description: '',
         website: '',
         category: 'Other' as PitchCategory,
+        currency: 'STX' as 'STX' | 'sBTC',
         logoUrl: '',
         deckUrl: '',
     });
@@ -53,6 +54,7 @@ const CreatePitch: React.FC = () => {
                 description: formData.description,
                 website: formData.website,
                 founder: address,
+                currency: formData.currency,
                 category: formData.category,
                 logoUrl: formData.logoUrl || undefined,
                 deckUrl: formData.deckUrl || undefined,
@@ -87,6 +89,7 @@ const CreatePitch: React.FC = () => {
                 pitchIdHash,
                 address,
                 paymentDetails.payment_details.amount,
+                formData.currency,
                 () => { },
                 (txId) => {
                     setPaymentStep('verifying');
@@ -178,7 +181,7 @@ const CreatePitch: React.FC = () => {
                                 <div className="p-6 bg-brand-accent/10 rounded-2xl border border-brand-accent/30">
                                     <h3 className="font-bold text-lg mb-4 text-brand-accent">Payment Required</h3>
                                     <p className="text-white/60 mb-4">
-                                        To publish your pitch, please send <strong>{paymentDetails.payment_details.amount / 1000000} STX</strong> to the smart contract.
+                                        To publish your pitch, please send <strong>{paymentDetails.payment_details.amount / 1000000} {formData.currency}</strong> to the smart contract.
                                     </p>
                                     {paymentDetails.payment_details.contract_call && (
                                         <div className="text-xs text-white/40 space-y-2">
@@ -226,7 +229,7 @@ const CreatePitch: React.FC = () => {
                                         ) : paymentStep === 'pending' ? (
                                             <><Loader2 className="animate-spin mr-2" /> Confirming...</>
                                         ) : (
-                                            <>Pay {paymentDetails.payment_details.amount / 1000000} STX</>
+                                            <>Pay {paymentDetails.payment_details.amount / 1000000} {formData.currency}</>
                                         )}
                                     </Button>
                                 </div>
@@ -276,6 +279,24 @@ const CreatePitch: React.FC = () => {
                                             <option key={cat} value={cat}>{cat}</option>
                                         ))}
                                     </select>
+                                </div>
+                                <div className="space-y-2">
+                                    <label className="text-sm font-semibold text-white/60">Payment Currency</label>
+                                    <div className="flex gap-4">
+                                        {['STX', 'sBTC'].map(curr => (
+                                            <button
+                                                key={curr}
+                                                type="button"
+                                                onClick={() => setFormData(prev => ({ ...prev, currency: curr as any }))}
+                                                className={`flex-1 py-3 px-4 rounded-xl border transition-all ${formData.currency === curr
+                                                        ? 'bg-brand-accent/20 border-brand-accent text-brand-accent'
+                                                        : 'bg-white/5 border-white/10 text-white/60 hover:border-white/20'
+                                                    }`}
+                                            >
+                                                {curr}
+                                            </button>
+                                        ))}
+                                    </div>
                                 </div>
 
                                 <div className="space-y-2">
@@ -327,7 +348,7 @@ const CreatePitch: React.FC = () => {
                                         <Rocket size={24} />
                                     </div>
                                     <div>
-                                        <h4 className="font-bold text-sm mb-1">Launch Fee: 5 STX</h4>
+                                        <h4 className="font-bold text-sm mb-1">Launch Fee: 5 {formData.currency}</h4>
                                         <p className="text-xs text-white/40 leading-relaxed">
                                             By submitting, you will trigger a transaction to the PitchPay smart contract. Your pitch will be visible to all investors once verified on-chain.
                                         </p>

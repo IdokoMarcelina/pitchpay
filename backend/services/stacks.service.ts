@@ -24,6 +24,8 @@ const CONTRACT_NAME = (process.env.CONTRACT_NAME || 'pitchpay_clar_v1').trim();
 const STACKS_API_URL =
     (process.env.STACKS_API_URL || 'https://api.testnet.hiro.so').trim();
 
+const SBTC_CONTRACT = 'ST1F7QA2MDF17S807EPA36TSS8AMEFY4KA9TVGWXT.sbtc-token';
+
 logger.info('Stacks Service Configuration Initialized', {
     CONTRACT_ADDRESS,
     CONTRACT_NAME,

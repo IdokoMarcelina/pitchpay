@@ -4,11 +4,13 @@ import {
   Pc,
   bufferCV,
   uintCV,
+  principalCV,
 } from '@stacks/transactions';
 import { STACKS_TESTNET } from '@stacks/network';
 
 const CONTRACT_ADDRESS = import.meta.env.VITE_CONTRACT_ADDRESS || 'ST1Z0AQZHXW508XB03EWKH6KK90A0T084DTD8DPTG';
 const CONTRACT_NAME = import.meta.env.VITE_CONTRACT_NAME || 'pitchpay_clar_v1';
+const SBTC_CONTRACT = 'ST1F7QA2MDF17S807EPA36TSS8AMEFY4KA9TVGWXT.sbtc-token';
 
 export interface TransactionResult {
   txid: string;
@@ -62,6 +64,16 @@ export async function payForPitch(pitchIdHash: string, userAddress: string, amou
   return makeContractCall('pay-for-pitch', [bufferCV(hexToBytes(pitchIdHash))], postConditions);
 }
 
+export async function payForPitchFT(pitchIdHash: string, userAddress: string, amount: number): Promise<TransactionResult> {
+  const postConditions = [
+    Pc.principal(userAddress).willSendEq(amount).ft(SBTC_CONTRACT, 'sbtc-token')
+  ];
+  return makeContractCall('pay-for-pitch-ft', [
+    bufferCV(hexToBytes(pitchIdHash)),
+    principalCV(SBTC_CONTRACT)
+  ], postConditions);
+}
+
 export async function payForBoost(pitchIdHash: string, userAddress: string, amount: number): Promise<TransactionResult> {
   const postConditions = [
     Pc.principal(userAddress).willSendEq(amount).ustx()
@@ -84,6 +96,19 @@ export async function payForInvestment(pitchIdHash: string, amount: string, user
   return makeContractCall('invest-in-pitch', [
     bufferCV(hexToBytes(pitchIdHash)),
     uintCV(amountInt)
+  ], postConditions);
+}
+
+export async function payForInvestmentFT(pitchIdHash: string, amount: string, userAddress: string): Promise<TransactionResult> {
+  const amountInt = BigInt(amount);
+  const postConditions = [
+    Pc.principal(userAddress).willSendEq(amountInt).ft(SBTC_CONTRACT, 'sbtc-token')
+  ];
+
+  return makeContractCall('invest-in-pitch-ft', [
+    bufferCV(hexToBytes(pitchIdHash)),
+    uintCV(amountInt),
+    principalCV(SBTC_CONTRACT)
   ], postConditions);
 }
 

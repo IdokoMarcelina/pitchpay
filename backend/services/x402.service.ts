@@ -86,9 +86,10 @@ export class X402Service {
             // Basic validation for pending tx
             if (tx.tx_status === 'pending') {
                 const contractId = getContractId();
+                const validFunctions = ['pay-for-pitch', 'pay-for-pitch-ft'];
                 if (tx.tx_type !== 'contract_call' ||
                     tx.contract_call.contract_id !== contractId ||
-                    tx.contract_call.function_name !== 'pay-for-pitch') {
+                    !validFunctions.includes(tx.contract_call.function_name)) {
                     return { success: false, error: 'Invalid transaction type or target' };
                 }
             }
@@ -96,9 +97,20 @@ export class X402Service {
             const pitch = await Pitch.findById(pitchId);
             if (!pitch) return { success: false, error: 'Pitch not found' };
 
-            const onChainData = await StacksService.getPitchOnChain(pitch.pitchIdHash) as any;
+            let isVerifiedOnChain = false;
 
-            if (onChainData && onChainData.founder.toLowerCase() === pitch.founder.toLowerCase()) {
+            if (pitch.currency === 'sBTC') {
+                // Verify FT transfer for sBTC 
+                // Using hardcoded contract details for testnet sBTC for now
+                const SBTC_CONTRACT = 'ST1F7QA2MDF17S807EPA36TSS8AMEFY4KA9TVGWXT.sbtc-token';
+                const owner = 'ST1Z0AQZHXW508XB03EWKH6KK90A0T084DTD8DPTG';
+                isVerifiedOnChain = await StacksService.verifyFTTransfer(txid, SBTC_CONTRACT.split('.')[0], 5000000, owner);
+            } else {
+                const onChainData = await StacksService.getPitchOnChain(pitch.pitchIdHash) as any;
+                isVerifiedOnChain = !!(onChainData && onChainData.founder.toLowerCase() === pitch.founder.toLowerCase());
+            }
+
+            if (isVerifiedOnChain) {
                 pitch.status = 'VERIFIED';
                 // Trigger AI analysis for the verified pitch
                 await AIService.processNewPitch(pitch);

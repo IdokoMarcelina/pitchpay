@@ -17,6 +17,7 @@ export interface Pitch {
   description: string;
   website: string;
   founder: string;
+  currency: 'STX' | 'sBTC';
   category: PitchCategory;
   logoUrl?: string;
   deckUrl?: string;
@@ -103,7 +104,7 @@ export const api = {
   getPitchPaymentDetails: (id: string) =>
     fetchApi<PaymentDetails>(`/pitches/${id}/payment-details`),
 
-  createPitch: (data: { title: string; description: string; website: string; founder: string }, authHeader?: string) =>
+  createPitch: (data: { title: string; description: string; website: string; founder: string; currency?: string; category?: string; logoUrl?: string; deckUrl?: string }, authHeader?: string) =>
     fetchApi<Pitch | PaymentDetails>('/pitches', {
       method: 'POST',
       body: JSON.stringify(data),

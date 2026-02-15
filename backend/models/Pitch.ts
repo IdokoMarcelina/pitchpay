@@ -28,6 +28,7 @@ export interface IPitch extends Document {
     description: string;
     website: string;
     founder: string;
+    currency: 'STX' | 'sBTC';
     category: PitchCategory;
     logoUrl?: string;
     deckUrl?: string;
@@ -63,6 +64,7 @@ const PitchSchema: Schema = new Schema({
     description: { type: String, required: true },
     website: { type: String, required: true },
     founder: { type: String, required: true, lowercase: true },
+    currency: { type: String, enum: ['STX', 'sBTC'], default: 'STX' },
     category: { type: String, enum: PITCH_CATEGORIES, default: 'Other' },
     logoUrl: { type: String },
     deckUrl: { type: String },

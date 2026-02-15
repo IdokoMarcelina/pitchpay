@@ -7,7 +7,7 @@ import { usePitch } from '../hooks/usePitches';
 import { useWallet } from '../context/WalletContext';
 import { usePayment } from '../hooks/usePayment';
 import { api, type PaymentDetails } from '../lib/api';
-import { payForInvestment, type TransactionResult } from '../lib/transactions';
+import { payForInvestment, payForInvestmentFT, type TransactionResult } from '../lib/transactions';
 
 const PitchDetail: React.FC = () => {
     const { id } = useParams<{ id: string }>();
@@ -57,9 +57,11 @@ const PitchDetail: React.FC = () => {
             const pitchIdHash = paymentDetails.payment_details.contract_call.args[0].replace('0x', '');
             const amount = paymentDetails.payment_details.contract_call.args[1];
 
-            console.log('Submitting investment with:', { pitchIdHash, amount, address });
+            console.log('Submitting investment with:', { pitchIdHash, amount, address, currency: pitch.currency });
 
-            const result: TransactionResult = await payForInvestment(pitchIdHash, amount, address);
+            const result: TransactionResult = pitch.currency === 'sBTC'
+                ? await payForInvestmentFT(pitchIdHash, amount, address)
+                : await payForInvestment(pitchIdHash, amount, address);
 
             console.log('Investment transaction broadcasted. Tx ID:', result.txid);
 
@@ -106,6 +108,7 @@ const PitchDetail: React.FC = () => {
                 pitchIdHash,
                 address,
                 pitchPayDetails.payment_details.amount,
+                pitch.currency,
                 () => { },
                 (txId) => {
                     setPitchPayStep('verifying');
@@ -247,13 +250,13 @@ const PitchDetail: React.FC = () => {
                                     <TrendingUp size={40} />
                                 </div>
                                 <h3 className="font-bold text-xl mb-2">Invest in this Startup</h3>
-                                <p className="text-white/40 text-sm mb-6">Support this founder directly with STX tokens.</p>
+                                <p className="text-white/40 text-sm mb-6">Support this founder directly with {pitch.currency} tokens.</p>
 
                                 <div className="p-4 bg-white/5 rounded-2xl border border-white/10 mb-6 text-left">
                                     <div className="flex justify-between items-end mb-2">
                                         <div className="text-[10px] text-white/40 uppercase tracking-widest font-bold">Total Raised</div>
                                         <div className="text-lg font-bold text-green-400">
-                                            {((pitch.investments?.reduce((sum, i) => sum + i.amount, 0) || 0) / 1000000).toFixed(2)} STX
+                                            {((pitch.investments?.reduce((sum, i) => sum + i.amount, 0) || 0) / 1000000).toFixed(2)} {pitch.currency}
                                         </div>
                                     </div>
                                     <div className="w-full bg-white/10 h-1.5 rounded-full overflow-hidden">
@@ -352,7 +355,7 @@ const PitchDetail: React.FC = () => {
                                 <div className="p-4 bg-brand-accent/10 rounded-xl border border-brand-accent/30">
                                     <p className="text-white/60 mb-2">Launch Fee:</p>
                                     <p className="text-2xl font-bold text-brand-accent">
-                                        {pitchPayDetails ? (pitchPayDetails.payment_details.amount / 1000000).toFixed(2) : '5.00'} STX
+                                        {pitchPayDetails ? (pitchPayDetails.payment_details.amount / 1000000).toFixed(2) : '5.00'} {pitch.currency}
                                     </p>
                                 </div>
 
@@ -425,7 +428,7 @@ const PitchDetail: React.FC = () => {
                                 <div className="p-4 bg-brand-accent/10 rounded-xl border border-brand-accent/30">
                                     <p className="text-white/60 mb-2">Amount to invest:</p>
                                     <p className="text-2xl font-bold text-brand-accent">
-                                        {(paymentDetails.payment_details.amount / 1000000).toFixed(2)} STX
+                                        {(paymentDetails.payment_details.amount / 1000000).toFixed(2)} {pitch.currency}
                                     </p>
                                 </div>
 
@@ -455,7 +458,7 @@ const PitchDetail: React.FC = () => {
                         ) : (
                             <div className="space-y-6">
                                 <div className="space-y-2">
-                                    <label className="text-sm font-semibold text-white/60">Investment Amount (STX)</label>
+                                    <label className="text-sm font-semibold text-white/60">Investment Amount ({pitch.currency})</label>
                                     <input
                                         type="number"
                                         min="0.1"
@@ -464,7 +467,7 @@ const PitchDetail: React.FC = () => {
                                         onChange={(e) => setInvestAmount(parseFloat(e.target.value) || 0)}
                                         className="w-full bg-white/5 border border-white/10 rounded-xl py-3 px-4 focus:outline-none focus:border-brand-accent/50"
                                     />
-                                    <p className="text-xs text-white/40">Minimum 0.1 STX</p>
+                                    <p className="text-xs text-white/40">Minimum 0.1 {pitch.currency}</p>
                                 </div>
 
                                 {investError && (

@@ -2,6 +2,8 @@
 ;; version:
 ;; Handles micro-payments for startup pitches and boosts
 
+(use-trait sip-010-trait 'ST1NXBK3K5YYMD6FD41MVNP3JS1GABZ8TRVX023PT.sip-010-trait-ft-standard.sip-010-trait)
+
 ;; Constants
 (define-constant ERR-NOT-AUTHORIZED (err u100))
 (define-constant ERR-ALREADY-BOOSTED (err u101))
@@ -108,6 +110,32 @@
     )
 )
 
+(define-public (pay-for-pitch-ft (pitch-id (buff 32)) (token <sip-010-trait>))
+    (let (
+        (fee (var-get pitch-fee))
+        (owner (var-get contract-owner))
+    )
+        (asserts! (is-valid-pitch-id pitch-id) ERR-INVALID-PITCH-ID)
+
+        (try! (contract-call? token transfer fee tx-sender owner (some 0x01)))
+
+        (map-set pitches { pitch-id: pitch-id } {
+            founder: tx-sender,
+            timestamp: stacks-block-height,
+            is-boosted: false,
+            amount-paid: fee,
+        })
+
+        (print {
+            event: "pitch-created",
+            pitch-id: pitch-id,
+            founder: tx-sender,
+            token: (some (contract-of token))
+        })
+        (ok true)
+    )
+)
+
 (define-public (pay-for-boost (pitch-id (buff 32)))
     (let (
             (pitch (unwrap! (get-pitch pitch-id) ERR-PITCH-NOT-FOUND))
@@ -165,6 +193,47 @@
             founder: founder,
             amount: amount,
             reward: amount,
+            receipt-id: receipt-id
+        })
+        (ok true)
+    )
+)
+
+(define-public (invest-in-pitch-ft (pitch-id (buff 32)) (amount uint) (token <sip-010-trait>))
+    (let (
+        (pitch (unwrap! (get-pitch pitch-id) ERR-PITCH-NOT-FOUND))
+        (founder (get founder pitch))
+        (receipt-id (+ (var-get last-receipt-id) u1))
+    )
+        (asserts! (>= amount MIN-INVESTMENT) ERR-INVALID-amount)
+        
+        ;; 1. Transfer Token to founder
+        (try! (contract-call? token transfer amount tx-sender founder (some 0x02)))
+        
+        ;; 2. Mint PPR rewards (1 PPR per 1 STX equivalent)
+        (try! (ft-mint? pitch-pay-reward amount tx-sender))
+
+        ;; 3. Mint NFT Investment Receipt
+        (try! (nft-mint? investment-receipt receipt-id tx-sender))
+        
+        ;; 4. Store metadata for the receipt
+        (map-set receipt-metadata receipt-id {
+            amount: amount,
+            pitch-id: pitch-id,
+            investor: tx-sender,
+            timestamp: stacks-block-height
+        })
+
+        ;; 5. Update last-receipt-id
+        (var-set last-receipt-id receipt-id)
+
+        (print {
+            event: "pitch-invested",
+            pitch-id: pitch-id,
+            investor: tx-sender,
+            founder: founder,
+            amount: amount,
+            token: (some (contract-of token)),
             receipt-id: receipt-id
         })
         (ok true)
