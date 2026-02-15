@@ -360,7 +360,31 @@ export class PitchController {
             }, 0);
 
             const rewardBalance = await StacksService.getRewardBalance(address).catch(() => 0) || 0;
-            const receipts = await StacksService.getUserReceipts(address).catch(() => []) || [];
+            const confirmedReceipts = await StacksService.getUserReceipts(address).catch(() => []) || [];
+
+            // Map confirmed receipts to include status
+            const receipts = confirmedReceipts.map(r => ({ ...r, status: 'VERIFIED' }));
+
+            // Add pending receipts from database investments that aren't yet on-chain
+            const confirmedTxids = new Set(receipts.map(r => r.txid));
+
+            investedPitches.forEach(pitch => {
+                const userInvestments = pitch.investments?.filter(i =>
+                    i.investor && i.investor.toLowerCase() === lowerAddress && !confirmedTxids.has(i.txid)
+                ) || [];
+
+                userInvestments.forEach(inv => {
+                    receipts.push({
+                        receiptId: 0, // No ID yet
+                        txid: inv.txid,
+                        pitchTitle: pitch.title,
+                        amount: inv.amount,
+                        investor: inv.investor,
+                        timestamp: Math.floor(inv.createdAt.getTime() / 1000),
+                        status: 'PENDING'
+                    } as any);
+                });
+            });
 
             const notifications = pitches.flatMap(p =>
                 (p.notifications || []).map(n => ({

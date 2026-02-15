@@ -19,6 +19,8 @@ interface UserProfile {
         "pitch-id": string;
         investor: string;
         timestamp: number;
+        pitchTitle?: string;
+        status: 'VERIFIED' | 'PENDING';
     }>;
     notifications: any[];
 }

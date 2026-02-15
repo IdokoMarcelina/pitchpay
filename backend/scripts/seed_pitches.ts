@@ -7,7 +7,7 @@ import crypto from 'crypto';
 
 dotenv.config();
 
-const MONGODB_URI = 'mongodb+srv://admin:Vjq8SCmBe9dE69Px@cluster0.gnzitzu.mongodb.net/pitchpay-v1?retryWrites=true&w=majority&appName=pitch-pay-db';
+const MONGODB_URI = '';
 const SEED_ADDRESS = 'ST2FY75TNSXVGTTB80BJMNHR9KYQPVWHAT4H4MYET';
 
 const seedPitches = [

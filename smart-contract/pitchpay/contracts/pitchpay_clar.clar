@@ -240,6 +240,37 @@
     )
 )
 
+;; SIP-009 NFT Trait definition
+(define-trait nft-trait
+  (
+    (get-last-token-id () (response uint uint))
+    (get-token-uri (uint) (response (optional (string-ascii 256)) uint))
+    (get-owner (uint) (response (optional principal) uint))
+    (transfer (uint principal principal) (response bool uint))
+  )
+)
+
+;; SIP-009 implementation
+(define-read-only (get-last-token-id)
+    (ok (var-get last-receipt-id))
+)
+
+(define-read-only (get-token-uri (token-id uint))
+    (ok (some "https://api.pitchpay.io/metadata/receipt/{id}"))
+)
+
+(define-read-only (get-owner (id uint))
+    (ok (nft-get-owner? investment-receipt id))
+)
+
+(define-public (transfer (id uint) (sender principal) (recipient principal))
+    (begin
+        (asserts! (is-eq tx-sender sender) ERR-NOT-AUTHORIZED)
+        (try! (nft-transfer? investment-receipt id sender recipient))
+        (ok true)
+    )
+)
+
 ;; Owner functions
 (define-public (set-fees
         (new-pitch-fee uint)

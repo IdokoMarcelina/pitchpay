@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import Navbar from '../components/Navbar';
 import PitchCard from '../components/PitchCard';
-import { Loader2, Rocket, TrendingUp, Wallet } from 'lucide-react';
+import { Loader2, Rocket, TrendingUp, Wallet, Shield } from 'lucide-react';
 import { api, type Pitch } from '../lib/api';
 import { useWallet } from '../context/WalletContext';
 
@@ -16,6 +16,7 @@ interface UserProfile {
         totalInvested: number;
         totalRaised: number;
     };
+    receipts?: any[];
 }
 
 const Profile: React.FC = () => {
@@ -24,14 +25,14 @@ const Profile: React.FC = () => {
     const [profile, setProfile] = useState<UserProfile | null>(null);
     const [isLoading, setIsLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
-    const [activeTab, setActiveTab] = useState<'pitches' | 'investments'>('pitches');
+    const [activeTab, setActiveTab] = useState<'pitches' | 'investments' | 'receipts'>('pitches');
 
     const isOwner = currentAddress?.toLowerCase() === address?.toLowerCase();
 
     useEffect(() => {
         const fetchProfile = async () => {
             if (!address) return;
-            
+
             setIsLoading(true);
             setError(null);
             try {
@@ -128,25 +129,33 @@ const Profile: React.FC = () => {
                     <div className="flex gap-4 mb-8">
                         <button
                             onClick={() => setActiveTab('pitches')}
-                            className={`px-6 py-3 rounded-xl font-medium transition-all ${
-                                activeTab === 'pitches' 
-                                    ? 'bg-brand-accent text-white' 
-                                    : 'text-white/60 hover:text-white hover:bg-white/5'
-                            }`}
+                            className={`px-6 py-3 rounded-xl font-medium transition-all ${activeTab === 'pitches'
+                                ? 'bg-brand-accent text-white'
+                                : 'text-white/60 hover:text-white hover:bg-white/5'
+                                }`}
                         >
                             <Rocket size={18} className="inline mr-2" />
                             Created Pitches ({profile.pitches.length})
                         </button>
                         <button
                             onClick={() => setActiveTab('investments')}
-                            className={`px-6 py-3 rounded-xl font-medium transition-all ${
-                                activeTab === 'investments' 
-                                    ? 'bg-brand-accent text-white' 
-                                    : 'text-white/60 hover:text-white hover:bg-white/5'
-                            }`}
+                            className={`px-6 py-3 rounded-xl font-medium transition-all ${activeTab === 'investments'
+                                ? 'bg-brand-accent text-white'
+                                : 'text-white/60 hover:text-white hover:bg-white/5'
+                                }`}
                         >
                             <TrendingUp size={18} className="inline mr-2" />
                             Investments ({profile.investedPitches.length})
+                        </button>
+                        <button
+                            onClick={() => setActiveTab('receipts')}
+                            className={`px-6 py-3 rounded-xl font-medium transition-all ${activeTab === 'receipts'
+                                ? 'bg-brand-accent text-white'
+                                : 'text-white/60 hover:text-white hover:bg-white/5'
+                                }`}
+                        >
+                            <Shield size={18} className="inline mr-2" />
+                            Receipts ({profile.receipts?.length || 0})
                         </button>
                     </div>
 
@@ -164,7 +173,7 @@ const Profile: React.FC = () => {
                                 <p>No pitches created yet</p>
                             </div>
                         )
-                    ) : (
+                    ) : activeTab === 'investments' ? (
                         profile.investedPitches.length > 0 ? (
                             <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
                                 {profile.investedPitches.map(pitch => {
@@ -172,7 +181,7 @@ const Profile: React.FC = () => {
                                     const investedAmount = userInvestments.reduce((s, i) => s + i.amount, 0);
                                     return (
                                         <Link key={pitch._id} to={`/pitch/${pitch._id}`}>
-                                            <div className="glass rounded-2xl p-6 border-green-500/30 bg-green-500/5">
+                                            <div className="glass rounded-2xl p-6 border-green-500/30 bg-green-500/5 hover:border-green-500/50 transition-colors">
                                                 <h3 className="text-xl font-bold mb-2">{pitch.title}</h3>
                                                 <p className="text-white/60 text-sm mb-4 line-clamp-2">{pitch.description}</p>
                                                 <div className="flex items-center justify-between">
@@ -188,6 +197,55 @@ const Profile: React.FC = () => {
                         ) : (
                             <div className="text-center py-12 text-white/40">
                                 <p>No investments yet</p>
+                            </div>
+                        )
+                    ) : (
+                        profile.receipts && profile.receipts.length > 0 ? (
+                            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                                {profile.receipts.map(receipt => (
+                                    <div key={receipt.receiptId} className="relative group">
+                                        <div className="absolute inset-0 bg-brand-accent/20 blur-xl opacity-0 group-hover:opacity-100 transition-opacity rounded-3xl"></div>
+                                        <div className="relative glass p-6 rounded-3xl border-brand-accent/50 bg-gradient-to-br from-brand-accent/10 to-transparent">
+                                            <div className="flex justify-between items-start mb-4">
+                                                <div className={`${receipt.status === 'VERIFIED' ? 'bg-brand-accent/20 text-brand-accent' : 'bg-yellow-400/20 text-yellow-500'} p-2 rounded-lg`}>
+                                                    <Shield size={24} />
+                                                </div>
+                                                <span className="text-xs font-mono text-white/40">
+                                                    {receipt.status === 'VERIFIED' ? `#${receipt.receiptId}` : 'MINTING...'}
+                                                </span>
+                                            </div>
+                                            <h4 className="text-[10px] uppercase tracking-widest text-brand-accent font-bold mb-1">{receipt.pitchTitle || 'Investment Receipt'}</h4>
+                                            <h3 className="text-lg font-bold mb-1">Receipt of Support</h3>
+                                            <p className="text-2xl font-black text-white mb-4">
+                                                {receipt.amount ? (
+                                                    receipt.amount > 100000000
+                                                        ? `${(receipt.amount / 100000000).toFixed(4)} sBTC`
+                                                        : `${(receipt.amount / 1000000).toFixed(2)} STX`
+                                                ) : 'Metadata Pending'}
+                                            </p>
+                                            <div className="pt-4 border-t border-white/10 space-y-2">
+                                                <div className="flex justify-between text-[10px] uppercase tracking-wider">
+                                                    <span className="text-white/40">Status</span>
+                                                    <span className={`${receipt.status === 'VERIFIED' ? 'text-brand-accent' : 'text-yellow-400'} font-bold text-[10px]`}>
+                                                        {receipt.status || 'VERIFIED'}
+                                                    </span>
+                                                </div>
+                                            </div>
+                                            <a
+                                                href={`https://explorer.hiro.so/txid/${receipt.txid}?chain=testnet`}
+                                                target="_blank"
+                                                rel="noopener noreferrer"
+                                                className="mt-6 block w-full py-2 text-center text-xs font-bold bg-white/5 hover:bg-white/10 rounded-xl transition-colors border border-white/10"
+                                            >
+                                                View Transaction
+                                            </a>
+                                        </div>
+                                    </div>
+                                ))}
+                            </div>
+                        ) : (
+                            <div className="text-center py-12 text-white/40">
+                                <p>No NFT receipts found for this user.</p>
                             </div>
                         )
                     )}

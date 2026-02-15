@@ -8,6 +8,7 @@ import {
 } from '@stacks/transactions';
 import * as crypto from 'crypto';
 import AuthSession from '../models/AuthSession';
+import Pitch from '../models/Pitch';
 import logger from '../middleware/logger';
 
 // Cross-environment fetch support
@@ -277,10 +278,19 @@ export class StacksService {
             const receipts = await Promise.all(holdings.map(async (h: any) => {
                 const rawValue = h.value?.value || h.nft_id?.value || h.value?.repr?.replace('u', '') || '0';
                 const receiptId = parseInt(rawValue);
-                const metadata = await this.getReceiptMetadata(receiptId);
+                const metadata = await this.getReceiptMetadata(receiptId) as any;
+
+                let pitchTitle = 'Unknown Project';
+                if (metadata && metadata['pitch-id']) {
+                    const pitchIdHash = metadata['pitch-id'].replace('0x', '');
+                    const pitch = await Pitch.findOne({ pitchIdHash }).select('title');
+                    if (pitch) pitchTitle = pitch.title;
+                }
+
                 return {
                     receiptId,
                     txid: h.tx_id,
+                    pitchTitle,
                     ...(typeof metadata === 'object' ? metadata : { rawMetadata: metadata })
                 };
             }));

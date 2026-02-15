@@ -226,12 +226,15 @@ const Dashboard: React.FC = () => {
                                             <div className="absolute inset-0 bg-brand-accent/20 blur-xl opacity-0 group-hover:opacity-100 transition-opacity rounded-3xl"></div>
                                             <div className="relative glass p-6 rounded-3xl border-brand-accent/50 bg-gradient-to-br from-brand-accent/10 to-transparent">
                                                 <div className="flex justify-between items-start mb-4">
-                                                    <div className="p-2 bg-brand-accent/20 rounded-lg text-brand-accent">
+                                                    <div className={`${receipt.status === 'VERIFIED' ? 'bg-brand-accent/20 text-brand-accent' : 'bg-yellow-400/20 text-yellow-500'} p-2 rounded-lg`}>
                                                         <Shield size={24} />
                                                     </div>
-                                                    <span className="text-xs font-mono text-white/40">#{receipt.receiptId}</span>
+                                                    <span className="text-xs font-mono text-white/40">
+                                                        {receipt.status === 'VERIFIED' ? `#${receipt.receiptId}` : 'MINTING...'}
+                                                    </span>
                                                 </div>
-                                                <h4 className="text-lg font-bold mb-1">Investment Receipt</h4>
+                                                <h4 className="text-[10px] uppercase tracking-widest text-brand-accent font-bold mb-1">{receipt.pitchTitle || 'Investment Receipt'}</h4>
+                                                <h3 className="text-lg font-bold mb-1">Receipt of Support</h3>
                                                 <p className="text-2xl font-black text-white mb-4">
                                                     {receipt.amount ? (
                                                         receipt.amount > 100000000 // Heuristic for sBTC sats vs STX micro
@@ -242,7 +245,9 @@ const Dashboard: React.FC = () => {
                                                 <div className="pt-4 border-t border-white/10 space-y-2">
                                                     <div className="flex justify-between text-[10px] uppercase tracking-wider">
                                                         <span className="text-white/40">Status</span>
-                                                        <span className="text-brand-accent font-bold text-[10px]">VERIFIED</span>
+                                                        <span className={`${receipt.status === 'VERIFIED' ? 'text-brand-accent' : 'text-yellow-400'} font-bold text-[10px]`}>
+                                                            {receipt.status || 'VERIFIED'}
+                                                        </span>
                                                     </div>
                                                     <div className="flex justify-between text-[10px] uppercase tracking-wider">
                                                         <span className="text-white/40">Network</span>
