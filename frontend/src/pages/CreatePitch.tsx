@@ -273,7 +273,7 @@ const CreatePitch: React.FC = () => {
                                         name="category"
                                         value={formData.category}
                                         onChange={handleChange}
-                                        className="w-full bg-white/5 border border-white/10 rounded-xl py-3 px-4 focus:outline-none focus:border-brand-accent/50 transition-colors"
+                                        className="w-full bg-white/5 border border-white/10 rounded-xl py-3 px-4 pr-10 focus:outline-none focus:border-brand-accent/50 transition-colors"
                                     >
                                         {PITCH_CATEGORIES.map(cat => (
                                             <option key={cat} value={cat}>{cat}</option>
@@ -289,8 +289,8 @@ const CreatePitch: React.FC = () => {
                                                 type="button"
                                                 onClick={() => setFormData(prev => ({ ...prev, currency: curr as any }))}
                                                 className={`flex-1 py-3 px-4 rounded-xl border transition-all ${formData.currency === curr
-                                                        ? 'bg-brand-accent/20 border-brand-accent text-brand-accent'
-                                                        : 'bg-white/5 border-white/10 text-white/60 hover:border-white/20'
+                                                    ? 'bg-brand-accent/20 border-brand-accent text-brand-accent'
+                                                    : 'bg-white/5 border-white/10 text-white/60 hover:border-white/20'
                                                     }`}
                                             >
                                                 {curr}

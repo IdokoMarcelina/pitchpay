@@ -13,12 +13,12 @@ const Explorer: React.FC = () => {
     const [sort, setSort] = useState<'recent' | 'trending' | 'oldest'>('recent');
     const [showFilters, setShowFilters] = useState(false);
 
-    const { pitches, pagination, isLoading, error, refetch } = usePitches({ 
-        page, 
+    const { pitches, pagination, isLoading, error, refetch } = usePitches({
+        page,
         limit: 9,
         search: search || undefined,
         category: category !== 'All' ? category : undefined,
-        sort 
+        sort
     });
 
     const featuredPitches = pitches.filter(p => p.isBoosted);
@@ -51,7 +51,7 @@ const Explorer: React.FC = () => {
                                 className="w-full bg-white/5 border border-white/10 rounded-xl py-3 pl-12 pr-4 focus:outline-none focus:border-brand-accent/50 transition-colors"
                             />
                         </form>
-                        <button 
+                        <button
                             onClick={() => setShowFilters(!showFilters)}
                             className={`glass p-3 rounded-xl transition-colors ${showFilters ? 'text-brand-accent bg-brand-accent/10' : 'text-white/60 hover:text-white'}`}
                         >
@@ -68,7 +68,7 @@ const Explorer: React.FC = () => {
                                 <select
                                     value={category}
                                     onChange={(e) => setCategory(e.target.value as PitchCategory | 'All')}
-                                    className="bg-white/5 border border-white/10 rounded-xl py-2 px-4 focus:outline-none focus:border-brand-accent/50"
+                                    className="bg-white/5 border border-white/10 rounded-xl py-2 px-4 pr-10 focus:outline-none focus:border-brand-accent/50"
                                 >
                                     <option value="All">All Categories</option>
                                     {PITCH_CATEGORIES.map(cat => (
@@ -81,25 +81,22 @@ const Explorer: React.FC = () => {
                                 <div className="flex gap-2">
                                     <button
                                         onClick={() => setSort('recent')}
-                                        className={`flex items-center gap-2 px-4 py-2 rounded-xl transition-colors ${
-                                            sort === 'recent' ? 'bg-brand-accent text-white' : 'bg-white/5 text-white/60 hover:text-white'
-                                        }`}
+                                        className={`flex items-center gap-2 px-4 py-2 rounded-xl transition-colors ${sort === 'recent' ? 'bg-brand-accent text-white' : 'bg-white/5 text-white/60 hover:text-white'
+                                            }`}
                                     >
                                         <Clock size={16} /> Recent
                                     </button>
                                     <button
                                         onClick={() => setSort('trending')}
-                                        className={`flex items-center gap-2 px-4 py-2 rounded-xl transition-colors ${
-                                            sort === 'trending' ? 'bg-brand-accent text-white' : 'bg-white/5 text-white/60 hover:text-white'
-                                        }`}
+                                        className={`flex items-center gap-2 px-4 py-2 rounded-xl transition-colors ${sort === 'trending' ? 'bg-brand-accent text-white' : 'bg-white/5 text-white/60 hover:text-white'
+                                            }`}
                                     >
                                         <Flame size={16} /> Trending
                                     </button>
                                     <button
                                         onClick={() => setSort('oldest')}
-                                        className={`flex items-center gap-2 px-4 py-2 rounded-xl transition-colors ${
-                                            sort === 'oldest' ? 'bg-brand-accent text-white' : 'bg-white/5 text-white/60 hover:text-white'
-                                        }`}
+                                        className={`flex items-center gap-2 px-4 py-2 rounded-xl transition-colors ${sort === 'oldest' ? 'bg-brand-accent text-white' : 'bg-white/5 text-white/60 hover:text-white'
+                                            }`}
                                     >
                                         <Clock size={16} /> Oldest
                                     </button>
@@ -162,11 +159,10 @@ const Explorer: React.FC = () => {
                                     <button
                                         key={pageNum}
                                         onClick={() => setPage(pageNum)}
-                                        className={`w-10 h-10 rounded-xl transition-colors ${
-                                            pageNum === page 
-                                                ? 'bg-brand-accent text-white' 
+                                        className={`w-10 h-10 rounded-xl transition-colors ${pageNum === page
+                                                ? 'bg-brand-accent text-white'
                                                 : 'glass text-white/60 hover:text-white'
-                                        }`}
+                                            }`}
                                     >
                                         {pageNum}
                                     </button>
