@@ -115,9 +115,19 @@ export class X402Service {
                 // Trigger AI analysis for the verified pitch
                 await AIService.processNewPitch(pitch);
             } else {
-                // Either tx_status is 'success' (but not yet on-chain) or 'pending'
-                // In both cases, we mark as PAID to acknowledge the transaction
                 pitch.status = 'PAID';
+
+                // Add notification for the founder that a payment was broadcast
+                pitch.notifications.push({
+                    type: 'publish',
+                    from: pitch.founder.toLowerCase(),
+                    pitchId: pitch._id.toString(),
+                    pitchTitle: pitch.title,
+                    amount: 5000000, // Publish fee
+                    txid: txid,
+                    read: false,
+                    createdAt: new Date()
+                } as any);
             }
 
             pitch.txid = txid;
@@ -163,6 +173,22 @@ export class X402Service {
                 // Always save txid for boost as well if we don't have it or if it's new
                 // For simplified tracking
                 pitch.txid = txid;
+
+                // Add notification for boost
+                const alreadyBoosted = pitch.notifications.some(n => n.txid === txid);
+                if (!alreadyBoosted) {
+                    pitch.notifications.push({
+                        type: 'boost',
+                        from: pitch.founder.toLowerCase(),
+                        pitchId: pitch._id.toString(),
+                        pitchTitle: pitch.title,
+                        amount: 10000000, // Boost fee
+                        txid: txid,
+                        read: false,
+                        createdAt: new Date()
+                    } as any);
+                }
+
                 await pitch.save();
                 return { success: true, status: tx.tx_status, pitch };
             }
@@ -318,8 +344,9 @@ export class X402Service {
                     // Check if this txid already added to avoid duplicates
                     const alreadyInvested = pitch.investments.some(inv => inv.txid === txid);
 
-                    if (!alreadyInvested && tx.tx_status === 'success') {
-                        // Only add to DB if transaction is SUCCESSFUL (confirmed on-chain)
+                    if (!alreadyInvested) {
+                        // Add to investments array only if successful or if we want to show pending investments
+                        // The user wants to see things immediately, so let's add it to investments too if not already there
                         pitch.investments.push({
                             investor: investor.toLowerCase(),
                             amount,
@@ -327,6 +354,7 @@ export class X402Service {
                             createdAt: new Date()
                         } as any);
 
+                        // Always add notification immediately
                         pitch.notifications.push({
                             type: 'investment',
                             from: investor.toLowerCase(),
@@ -339,9 +367,7 @@ export class X402Service {
                         } as any);
 
                         await pitch.save();
-                        return { success: true, status: tx.tx_status, message: 'Investment verified and recorded' };
-                    } else if (!alreadyInvested && tx.tx_status === 'pending') {
-                        return { success: true, status: tx.tx_status, message: 'Investment transaction pending' };
+                        return { success: true, status: tx.tx_status, message: 'Investment recorded and notification sent' };
                     }
                 }
             }

@@ -9,9 +9,9 @@ plan:
     - id: 0
       transactions:
         - contract-publish:
-            contract-name: pitchpay_clar_v2
+            contract-name: pitchpay_clar_v3
             expected-sender: ST1Z0AQZHXW508XB03EWKH6KK90A0T084DTD8DPTG
-            cost: 51120
+            cost: 81490
             path: contracts/pitchpay_clar.clar
             anchor-block-only: true
             clarity-version: 3

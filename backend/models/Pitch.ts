@@ -12,7 +12,7 @@ export interface IInvestment {
 
 export interface INotification {
     _id?: string;
-    type: 'investment' | 'boost';
+    type: 'investment' | 'boost' | 'publish';
     from: string;
     pitchId: string;
     pitchTitle: string;
@@ -48,7 +48,7 @@ const InvestmentSchema: Schema = new Schema({
 });
 
 const NotificationSchema: Schema = new Schema({
-    type: { type: String, enum: ['investment', 'boost'], required: true },
+    type: { type: String, enum: ['investment', 'boost', 'publish'], required: true },
     from: { type: String, required: true, lowercase: true },
     pitchId: { type: String, required: true },
     pitchTitle: { type: String, required: true },

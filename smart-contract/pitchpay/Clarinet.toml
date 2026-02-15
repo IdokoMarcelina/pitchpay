@@ -6,7 +6,7 @@ telemetry = true
 cache_dir = '.\.cache'
 requirements = []
 
-[contracts.pitchpay_clar_v2]
+[contracts.pitchpay_clar_v3]
 path = 'contracts/pitchpay_clar.clar'
 clarity_version = 3
 epoch = 'latest'

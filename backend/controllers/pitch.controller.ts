@@ -386,12 +386,15 @@ export class PitchController {
                 });
             });
 
-            const notifications = pitches.flatMap(p =>
-                (p.notifications || []).map(n => ({
-                    ...n,
-                    pitchTitle: p.title
-                }))
-            ).sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+            const notifications = pitches.flatMap(p => {
+                const isFounder = p.founder.toLowerCase() === lowerAddress;
+                return (p.notifications || [])
+                    .filter(n => isFounder || n.from.toLowerCase() === lowerAddress)
+                    .map(n => ({
+                        ...(n.toObject ? n.toObject() : n),
+                        pitchTitle: p.title
+                    }));
+            }).sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
 
             res.json({
                 address: lowerAddress,
@@ -426,12 +429,16 @@ export class PitchController {
                     { 'notifications.from': addressRegex }
                 ]
             });
-            const notifications = pitches.flatMap(p =>
-                (p.notifications || []).map(n => ({
-                    ...n,
-                    pitchTitle: p.title
-                }))
-            ).sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+            const lowerAddress = address.toLowerCase();
+            const notifications = pitches.flatMap(p => {
+                const isFounder = p.founder.toLowerCase() === lowerAddress;
+                return (p.notifications || [])
+                    .filter(n => isFounder || n.from.toLowerCase() === lowerAddress)
+                    .map(n => ({
+                        ...(n.toObject ? n.toObject() : n),
+                        pitchTitle: p.title
+                    }));
+            }).sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
 
             res.json({ notifications });
         } catch (error) {

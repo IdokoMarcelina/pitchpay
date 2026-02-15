@@ -3,7 +3,7 @@ import { motion, useScroll, useTransform } from 'framer-motion';
 import { Link } from 'react-router-dom';
 import Logo from './Logo';
 import Button from './Button';
-import { Menu, X, Wallet, Bell, TrendingUp } from 'lucide-react';
+import { Menu, X, Wallet, Bell, TrendingUp, Shield, Rocket } from 'lucide-react';
 import { useWallet } from '../context/WalletContext';
 import { api } from '../lib/api';
 
@@ -112,18 +112,34 @@ const Navbar: React.FC = () => {
                                                     notifications.slice(0, 5).map(n => (
                                                         <div key={n._id} className={`p-4 border-b border-white/5 ${!n.read ? 'bg-brand-accent/5' : ''}`}>
                                                             <div className="flex items-start gap-3">
-                                                                <div className="p-2 rounded-full bg-green-500/20 text-green-400">
-                                                                    <TrendingUp size={14} />
+                                                                <div className={`p-2 rounded-full ${n.type === 'boost' ? 'bg-orange-500/20 text-orange-400' :
+                                                                    n.type === 'publish' ? 'bg-blue-500/20 text-blue-400' :
+                                                                        'bg-green-500/20 text-green-400'
+                                                                    }`}>
+                                                                    {n.type === 'boost' ? <Rocket size={14} /> :
+                                                                        n.type === 'publish' ? <Shield size={14} /> :
+                                                                            <TrendingUp size={14} />}
                                                                 </div>
                                                                 <div>
                                                                     <p className="text-sm">
-                                                                        <span className="font-mono text-white/60">{n.from.slice(0, 6)}...{n.from.slice(-4)}</span>
-                                                                        {' '}invested in{' '}
-                                                                        <span className="text-brand-accent">{n.pitchTitle}</span>
+                                                                        {n.type === 'publish' ? (
+                                                                            <span>Your pitch <span className="text-brand-accent">{n.pitchTitle}</span> is live!</span>
+                                                                        ) : n.type === 'boost' ? (
+                                                                            <span>Pitch <span className="text-brand-accent">{n.pitchTitle}</span> boosted!</span>
+                                                                        ) : (
+                                                                            <>
+                                                                                <span className="font-mono text-white/60">{n.from.slice(0, 6)}...{n.from.slice(-4)}</span>
+                                                                                {' '}invested in{' '}
+                                                                                <span className="text-brand-accent">{n.pitchTitle}</span>
+                                                                            </>
+                                                                        )}
                                                                     </p>
                                                                     {n.amount && (
-                                                                        <p className="text-sm text-green-400 font-bold">
-                                                                            +{(n.amount / 1000000).toFixed(2)} STX
+                                                                        <p className={`text-sm font-bold ${n.type === 'boost' ? 'text-orange-400' :
+                                                                            n.type === 'publish' ? 'text-blue-400' :
+                                                                                'text-green-400'
+                                                                            }`}>
+                                                                            {(n.amount / 1000000).toFixed(2)} STX
                                                                         </p>
                                                                     )}
                                                                     <p className="text-xs text-white/40 mt-1">
