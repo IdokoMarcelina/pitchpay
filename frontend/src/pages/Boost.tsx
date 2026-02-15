@@ -142,21 +142,25 @@ const Boost: React.FC = () => {
                     {paymentDetails && (
                         <div className="glass p-6 rounded-2xl mb-8 border-brand-accent/30 bg-brand-accent/5">
                             <h3 className="font-bold text-lg mb-4 flex items-center gap-2">
-                                <Rocket size={20} className="text-brand-accent" /> Payment Required
+                                <Rocket size={20} className="text-brand-accent" /> Boost "{pitches.find(p => p._id === boostingId)?.title || 'Pitch'}"
                             </h3>
-                            <p className="text-white/60 mb-4">
-                                Boost fee: ${(paymentDetails.payment_details.amount / 100).toFixed(2)} STX
-                            </p>
+                            <div className="p-4 bg-brand-primary/50 rounded-xl mb-6 border border-brand-accent/20">
+                                <p className="text-sm text-white/60 mb-1">Total Fee:</p>
+                                <p className="text-2xl font-black text-brand-accent">
+                                    {(paymentDetails.payment_details.amount / 1000000).toFixed(2)} STX
+                                </p>
+                            </div>
                             <div className="flex gap-4">
                                 <Button
                                     variant="primary"
                                     onClick={handleSubmitPayment}
                                     disabled={isProcessing}
+                                    className="flex-1 py-4"
                                 >
-                                    {isProcessing ? <Loader2 className="animate-spin mr-2" size={18} /> : null}
-                                    Pay & Boost
+                                    {isProcessing ? <Loader2 className="animate-spin mr-2" size={18} /> : <Zap size={18} className="mr-2" />}
+                                    Pay & Boost Now
                                 </Button>
-                                <Button variant="outline" onClick={() => { setPaymentDetails(null); setBoostingId(null); }}>
+                                <Button variant="outline" className="px-6" onClick={() => { setPaymentDetails(null); setBoostingId(null); }}>
                                     Cancel
                                 </Button>
                             </div>
@@ -165,21 +169,27 @@ const Boost: React.FC = () => {
 
                     {pendingTxid && (
                         <div className="glass p-6 rounded-2xl mb-8 border-yellow-500/30 bg-yellow-500/5">
-                            <h3 className="font-bold text-lg mb-4 text-yellow-400">Transaction Pending</h3>
-                            <p className="text-white/60 mb-4 text-sm">
-                                TxID: <span className="font-mono">{pendingTxid.slice(0, 20)}...</span>
-                            </p>
-                            <p className="text-white/40 text-sm mb-4">
-                                Waiting for confirmation...
-                            </p>
-                            <Button
-                                variant="primary"
-                                onClick={handleVerifyPayment}
-                                disabled={isProcessing}
-                            >
-                                {isProcessing ? <Loader2 className="animate-spin mr-2" size={18} /> : null}
-                                Verify Payment
-                            </Button>
+                            <h3 className="font-bold text-lg mb-4 text-yellow-400 flex items-center gap-2">
+                                <Loader2 className="animate-spin" size={20} /> Boosting "{pitches.find(p => p._id === boostingId)?.title || 'Pitch'}"
+                            </h3>
+                            <div className="space-y-4">
+                                <div className="p-4 bg-black/20 rounded-xl">
+                                    <p className="text-xs text-white/40 uppercase tracking-widest mb-1">Transaction ID</p>
+                                    <p className="font-mono text-xs text-white/60 break-all">{pendingTxid}</p>
+                                </div>
+                                <p className="text-white/40 text-sm">
+                                    Your payment has been broadcast. Click verify to complete the boost once confirmed.
+                                </p>
+                                <Button
+                                    variant="primary"
+                                    onClick={handleVerifyPayment}
+                                    disabled={isProcessing}
+                                    className="w-full"
+                                >
+                                    {isProcessing ? <Loader2 className="animate-spin mr-2" size={18} /> : null}
+                                    Verify & Activate Boost
+                                </Button>
+                            </div>
                         </div>
                     )}
 
